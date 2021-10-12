@@ -1,7 +1,7 @@
 ## Welcome to GitHub Pages
 
 
-![Image](https://matei-cloteaux.github.io/Umer.jpg)
+![Image](https://matei-cloteaux.github.io/Matei.jpg)
 
 You can use the [editor on GitHub](https://github.com/Matei-Cloteaux/SuperSmashMateis/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
