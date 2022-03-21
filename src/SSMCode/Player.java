@@ -1234,7 +1234,7 @@ public class Player extends Actor{
         
         if(testPrintTimer < 0){
             testPrintTimer = 1;
-            System.out.println(s);
+            //System.out.println(s);
         } else
             testPrintTimer -=1.0/60;
         

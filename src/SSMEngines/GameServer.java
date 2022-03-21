@@ -6,9 +6,9 @@ package SSMEngines;
  * and open the template in the editor.
  */
 
-/**
- *
- * @author matei
+/*
+
+  @author Matei
  */
 import java.io.*;
 import java.net.*;
@@ -19,15 +19,15 @@ public class GameServer {
     
     private ServerSocket ss;
     private int numPlayers;
-    private int maxPlayers;
-    
+    private final int maxPlayers;
+
     private boolean readyToPlay;
     private boolean p1ReadyInGame;
     private boolean p2ReadyInGame;
     private boolean p1PlayAgain, p2PlayAgain;
     private boolean p1DC, p2DC;
     
-    private int port;
+    private final int port;
     
     private Socket p1Socket;
     private Socket p2Socket;
@@ -38,7 +38,7 @@ public class GameServer {
     
     private String p1Info,p2Info;
     private String p1GameInfo,p2GameInfo;
-    private String bossCode;
+    private final String bossCode;
     
     private ArrayList<String> p1PList, p2PList;
     
@@ -60,7 +60,7 @@ public class GameServer {
         try{
             ss = new ServerSocket(port);
         } catch(IOException ex){
-            System.out.println(ex);
+            ex.printStackTrace();
         }
         
         bossCode = JOptionPane.showInputDialog("What is the Boss Code");
@@ -95,14 +95,14 @@ public class GameServer {
                     try{
                         Thread.sleep(16);
                     }catch(InterruptedException ex){
-                        System.out.println(ex);
+                        ex.printStackTrace();
                     }
                     readThread1.start();
                     Thread writeThread1 = new Thread(p1WriteRunnable);
                     try{
                         Thread.sleep(16);
                     }catch(InterruptedException ex){
-                        System.out.println(ex);
+                        ex.printStackTrace();
                     }
                     writeThread1.start();
                 } else {                    
@@ -113,14 +113,14 @@ public class GameServer {
                     try{
                         Thread.sleep(16);
                     }catch(InterruptedException ex){
-                        System.out.println(ex);
+                        ex.printStackTrace();
                     }
                     readThread2.start();
                     Thread writeThread2 = new Thread(p2WriteRunnable);
                     try{
                         Thread.sleep(16);
                     }catch(InterruptedException ex){
-                        System.out.println(ex);
+                        ex.printStackTrace();
                     }
                     writeThread2.start();
                 }
@@ -128,14 +128,14 @@ public class GameServer {
             System.out.println("No longer accepting connections");
             
         }catch(IOException ex){
-            System.out.println(ex);
+            ex.printStackTrace();
         }
     }
     
     private class ReadFromClient implements Runnable{
         
-        private int playerID;
-        private ObjectInputStream dataIn;
+        private final int playerID;
+        private final ObjectInputStream dataIn;
         
         public ReadFromClient(int pID, ObjectInputStream in){
             playerID = pID;
@@ -166,7 +166,7 @@ public class GameServer {
                 }
                 
             }catch(IOException | ClassNotFoundException ex){
-                System.out.println(ex);
+                ex.printStackTrace();
                 if(playerID == 1)
                     p1DC = true;
                 else
@@ -177,8 +177,8 @@ public class GameServer {
     
         private class WriteToClient implements Runnable{
         
-        private int playerID;
-        private ObjectOutputStream dataOut;
+        private final int playerID;
+        private final ObjectOutputStream dataOut;
         
         public WriteToClient(int pID, ObjectOutputStream in){
             playerID = pID;

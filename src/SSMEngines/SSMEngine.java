@@ -17,7 +17,8 @@ import java.net.*;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import javax.swing.JOptionPane;
+import javax.swing.*;
+
 /**
  *
  * @author 22cloteauxm
@@ -41,17 +42,15 @@ public class SSMEngine extends AnimationPanel{
     //------------------------------------------------------------
     //Instance Bariables
     //------------------------------------------------------------
-    private boolean zPressed;
-    
-    private int width = 1100;
-    private int height = 650;
+    private final int width = 1100;
+    private final int height = 650;
     
     private int screenNumber;
     
-    private MapHandler myMapHandler;
+    private final MapHandler myMapHandler;
     
     private Player me, enemy;
-    private ArrayList<Player> playerList;
+    private final ArrayList<Player> playerList;
     private ArrayList<Platform> platList;
     private ArrayList<Projectile> myPList;
     private ArrayList<Projectile> enemyPList;
@@ -69,6 +68,8 @@ public class SSMEngine extends AnimationPanel{
     
     private String connecting;
     private String myName;
+    private String ipAddress;
+    private int playerMode;
     private String bossCode = "Zbogck";
     
     //Networking variables
@@ -92,7 +93,7 @@ public class SSMEngine extends AnimationPanel{
     private boolean isRunning;
     private boolean chargingL, releaseL;
     
-    private Player dummy;
+    private final Player dummy;
     
     private String cheatCode;
        
@@ -113,7 +114,13 @@ public class SSMEngine extends AnimationPanel{
         playerList.add(me); playerList.add(enemy); 
                 
         myMapHandler = new MapHandler();
-        connectToServer();
+
+        setUpLauncher();
+        setUpClock();
+
+        if(playerMode > 1)
+            connectToServer();
+
         initPlayers();
                 
         if(playerID == 0){
@@ -121,10 +128,16 @@ public class SSMEngine extends AnimationPanel{
             dummy = new Player(500,100,60,90,"blue");
             dummy.setCharacter(Player.DUMMY);
             playerList.add(dummy);
+
+            enemy = new Player(500,100,60,90,"blue");
+            enemy.setCharacter(Player.DUMMY);
+
             playerList.remove(enemy);
             startedBossTheme = false;
-        } else
+
+        } else {
             dummy = null;
+        }
         
         startGameTimer = 5;
         walkingTimer = 0.7;        
@@ -143,7 +156,7 @@ public class SSMEngine extends AnimationPanel{
         
         fpsTimer++;
         
-        if(clock.getTime() >= 1){
+        if(clock != null && clock.getTime() >= 1){
             actualFPS = clock.getFPS();
             drawnPing = ping;
         }
@@ -187,7 +200,7 @@ public class SSMEngine extends AnimationPanel{
         
         g.drawImage(Waiting_Meme,750,250,300,300,this);
         
-        if(readyToPlay == false){
+        if(!readyToPlay){
             g.drawString("Waiting for Player 2", 150, 150);
 
             if(frameNumber%60==0)
@@ -236,7 +249,7 @@ public class SSMEngine extends AnimationPanel{
                     ,imageSize,(int)(imageSize*1.5/2),this);
         }
         
-        if(playerID == 1){
+        if(playerID == 1 || playerID == 0){
             if(meReadyInGame){
                 g.setColor(new Color(255,0,0,50));
                 g.fillRect(0,0,width/2,height);
@@ -261,7 +274,7 @@ public class SSMEngine extends AnimationPanel{
         g.fillRect(530,0,20,height);
         
         g.setFont(new Font("Sans Serif", Font.BOLD, 45));
-        if(playerID == 1){
+        if(playerID == 1 || playerID == 0){
             g.drawString("You", 75, 50);
             g.drawString("Player 2", 290+520+50, 50);
             g.setColor(new Color(100,100,155,50));
@@ -345,24 +358,15 @@ public class SSMEngine extends AnimationPanel{
             lAnimationTimer = 0.25;
         }
         
-        if(dummy==null){
+        if(dummy == null) {
             me.animateAndDrawJAttack(playerList, enemyPList, enemy, g, this);
-            me.animateAndDrawKAttack(playerList,enemy, g,this);
-            me.animateAndDrawLAttack(playerList,enemy,g,this);
-        }else{
-            me.animateAndDrawJAttack(playerList, enemyPList, dummy, g, this);
-            me.animateAndDrawKAttack(playerList,dummy, g,this);
-            me.animateAndDrawLAttack(playerList,dummy,g,this);
+            me.animateAndDrawKAttack(playerList, enemy, g, this);
+            me.animateAndDrawLAttack(playerList, enemy, g, this);
         }
         
         handlePlayerMovement();
         handleBossMode();
         me.animate();
-        
-        if(dummy != null){
-            dummy.animate();
-            dummy.draw(g, this,1,me);
-        }            
         
         handleWalkingAnimation();
         handlePlayerImages();
@@ -390,8 +394,6 @@ public class SSMEngine extends AnimationPanel{
         
         g.setColor(Color.white);
         g.setFont(myFont);
-        if(dummy!=null)
-            g.drawString("Percentage: "+df.format(dummy.getPercentage()),250,100);
                
         g.setColor(Color.gray);
         g.fillRect(875,10,125,40);
@@ -401,11 +403,6 @@ public class SSMEngine extends AnimationPanel{
             g.drawString(""+(int)(gameTimer/60)+" : 0"+(int)(gameTimer%60), 900,40);
         else
             g.drawString(""+(int)(gameTimer/60)+" : "+(int)(gameTimer%60), 900,40);
-        
-        if(zPressed){
-            for(int i=0;i<20000;i++)
-                g.drawString(""+i, 10000, i);
-        }
     }
     public void renderEndGameScreen(Graphics g){
         cheatCode = "";
@@ -484,7 +481,7 @@ public class SSMEngine extends AnimationPanel{
             try{
                 Thread.sleep(500);
             } catch(InterruptedException ex){
-                System.out.println(ex);
+                ex.printStackTrace();
             }
             
             mePlayAgain = false;
@@ -914,34 +911,82 @@ public class SSMEngine extends AnimationPanel{
                 g2d.drawString("Ready", 170,560);
         }
     }
-    
+
+    public void handleDummyActions(Graphics g){
+        me.animateAndDrawJAttack(playerList, enemyPList, dummy, g, this);
+        me.animateAndDrawKAttack(playerList,dummy, g,this);
+        me.animateAndDrawLAttack(playerList,dummy,g,this);
+
+        //animate/draw
+        dummy.animate();
+        dummy.draw(g, this,1,me);
+
+        //draw percentage number
+        g.drawString("Percentage: "+df.format(dummy.getPercentage()),250,100);
+
+        //going off-screen
+        Rectangle screenBounds = new Rectangle(-200,-200,width+200,height+400);
+        if (!screenBounds.intersects(dummy.getHitBox())) {
+            dummy.setX(500);
+            dummy.setY(0);
+            dummy.setXVel(0);
+            dummy.setYVel(0);
+        }
+
+    }
+    public void handleMultiplayerActions(Graphics g){
+
+    }
+
+    //------------------------------------------------------------
+    //Launcher Methods
+    //------------------------------------------------------------
+
+    public void setUpLauncher(){
+        SSMLauncher launcher = new SSMLauncher();
+
+        JFrame myFrame = new JFrame("SSM Launcher");
+        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        myFrame.setVisible(true);
+        myFrame.add(launcher);
+        myFrame.setResizable(false);
+        myFrame.setSize(launcher.getPreferredSize());
+        myFrame.setLocation(300,50);
+
+        launcher.idkWhyIHaveToDoThisButThisIsKindaDum();
+
+        while(!launcher.shouldLaunch()){
+            myFrame.getComponent(0).repaint();
+            launcher.setFrameLocations(myFrame);
+
+            try{Thread.sleep(16);}catch(InterruptedException ex){ex.printStackTrace();}
+        }
+
+        myFrame.setVisible(false);
+        launcher.noVisible();
+
+        playerMode = launcher.getPlayerMode();
+        myName = launcher.getPlayerName();
+        ipAddress =  launcher.getIP();
+    }
+    public void setUpClock(){
+        clock = new Clock();
+        pingClock = new Clock();
+        Thread clockThread = new Thread(clock);
+        Thread pingThread = new Thread(pingClock);
+        clockThread.start();
+        pingThread.start();
+    }
+
     //------------------------------------------------------------
     //Networking 
     //------------------------------------------------------------
     
-    
     private void connectToServer(){
         try{
             String port = "80";
-            String ip = JOptionPane.showInputDialog("Enter IP address");
-            
-            if(ip.equals(""))
-                ip = "localhost";
-            else if(ip.equals("school"))
-                ip = "10.117.67.133";
-            else if(ip.equals("home"))
-                ip = "192.168.0.35";
-            
-            myName = JOptionPane.showInputDialog("Enter your player name");
-            
-            clock = new Clock();
-            pingClock = new Clock();
-            Thread clockThread = new Thread(clock);
-            Thread pingThread = new Thread(pingClock);
-            clockThread.start();
-            pingThread.start();
-            
-            socket = new Socket(ip,Integer.parseInt(port));
+
+            socket = new Socket(ipAddress,Integer.parseInt(port));
             System.out.println("Connected!");
             
             InputStream inStream = socket.getInputStream();
@@ -959,13 +1004,13 @@ public class SSMEngine extends AnimationPanel{
             wtsRunnable = new WriteToServer(out);
             rfsRunnable.startThreads();
         }catch(IOException ex){
-            System.out.println(ex);
+            ex.printStackTrace();
         }
     }
     
     private class ReadFromServer implements Runnable {
         
-        private ObjectInputStream dataIn;
+        private final ObjectInputStream dataIn;
         
         public ReadFromServer(ObjectInputStream in){
             dataIn = in;
@@ -990,7 +1035,7 @@ public class SSMEngine extends AnimationPanel{
                 }
                 
             }catch(IOException | ClassNotFoundException  ex){
-                System.out.println(ex);
+                ex.printStackTrace();
             }
         }
         
@@ -1003,7 +1048,7 @@ public class SSMEngine extends AnimationPanel{
     }
     private class WriteToServer implements Runnable{
         
-        private ObjectOutputStream dataOut;
+        private final ObjectOutputStream dataOut;
         
         public WriteToServer(ObjectOutputStream out){
             dataOut = out;
@@ -1026,12 +1071,12 @@ public class SSMEngine extends AnimationPanel{
                     try{
                         Thread.sleep(16);
                     }catch(InterruptedException ex){
-                        System.out.println(ex);
+                        ex.printStackTrace();
                     }
                 }
                 
             }catch(IOException ex){
-                System.out.println(ex);
+               ex.printStackTrace();
             }
         }
     }
@@ -1049,7 +1094,7 @@ public class SSMEngine extends AnimationPanel{
                 try{
                     Thread.sleep(10);
                 } catch(InterruptedException e){
-                    System.out.println(e);
+                    e.printStackTrace();
                 }
                 time+= 0.01;
             }
@@ -1072,7 +1117,7 @@ public class SSMEngine extends AnimationPanel{
         }
     }
     
-    private String parseChar = ",";
+    private final String parseChar = ",";
     private String packGameInfo(){
         String mapInfo = "";
         mapInfo += mouseX + parseChar;
@@ -1154,7 +1199,7 @@ public class SSMEngine extends AnimationPanel{
         if(playerID == 1){
             g2d.drawString(Player.getCharacterNames().get(me.getCharacter()),100,450);
             g2d.drawString(Player.getCharacterNames().get(enemy.getCharacter()), 650,450);
-        } else {
+        } else if(playerID == 2) {
             g2d.drawString(Player.getCharacterNames().get(enemy.getCharacter()),100,450);
             g2d.drawString(Player.getCharacterNames().get(me.getCharacter()), 650,450);
         }
@@ -1167,10 +1212,9 @@ public class SSMEngine extends AnimationPanel{
         for(int i=0; i<Player.getImages().size()-1;i+=1){
             int imageX = 10+(i%5)*(imageSize+10);
             int imageY = 100+((int)(imageSize*1.5/2)+10)*(i/5);
-            int imageWidth = imageSize;
             int imageHeight = (int)(imageSize*1.5/2);
             
-            imageRectList.add(new Rectangle(imageX,imageY,imageWidth,imageHeight));
+            imageRectList.add(new Rectangle(imageX,imageY, imageSize,imageHeight));
         }
         
         Rectangle readyP1 = new Rectangle(90,500,350,80);
@@ -1208,9 +1252,6 @@ public class SSMEngine extends AnimationPanel{
         char c = e.getKeyChar();
         
         cheatCode += c;
-        
-        if(c=='z')
-            zPressed = !zPressed;
         
         if(startGameTimer == 0 && screenNumber == IN_GAME_SCREEN && me.getLightning() == null && !me.isStunned()){
             if((c=='j' || c=='J') && jAttackTimer == 0 && me.getMoto() == null && !me.isHealing()) {
