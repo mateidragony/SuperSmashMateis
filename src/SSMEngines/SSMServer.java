@@ -71,13 +71,16 @@ public class SSMServer {
         System.out.println("Waiting for connections...");
         while(numPlayers<maxPlayers) {
             Socket s = ss.accept();
-
+            s.setTcpNoDelay(true);
             InputStream inStream = s.getInputStream();
             OutputStream outStream = s.getOutputStream();
 
-            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
-            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
+//            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
+//            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
 
+            
+            ObjectOutputStream out = new ObjectOutputStream(outStream);
+            ObjectInputStream in = new ObjectInputStream(inStream);
             out.writeInt(numPlayers);
             System.out.println("Player #" + numPlayers + " has connected");
 
@@ -153,7 +156,7 @@ public class SSMServer {
             while(true){
                 try {
                     dataOut.writeUTF(animator.pack());
-                    dataOut.flush();
+                   dataOut.flush();
                   //  Thread.sleep(1000/SSMRunner.FPS);
                 } catch(IOException  ex){
                     ex.printStackTrace();

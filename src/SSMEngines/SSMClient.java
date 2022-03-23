@@ -52,13 +52,18 @@ public class SSMClient extends AnimationPanel{
             String port = "80";
             Socket socket = new Socket(ipAddress, Integer.parseInt(port));
             System.out.println("Connected!");
+            socket.setTcpNoDelay(true);
 
             InputStream inStream = socket.getInputStream();
             OutputStream outStream = socket.getOutputStream();
+//
+//            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
+//            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
+            
+            ObjectOutputStream out = new ObjectOutputStream(outStream);
+            ObjectInputStream in = new ObjectInputStream(inStream);
 
-            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
-            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
-
+            
             playerID = in.readInt();
             System.out.println("You are player #"+playerID);
             if(playerID == 1)
@@ -111,6 +116,7 @@ public class SSMClient extends AnimationPanel{
             while(true){
                 try {
                     dataOut.writeUTF(packCommands());
+                   
                     dataOut.flush();
                   //  Thread.sleep(1000/SSMRunner.FPS);
                 } catch(IOException e){
