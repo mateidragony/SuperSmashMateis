@@ -3,15 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package SSMEngines;
+package SSMEngines.old;
 
 import SSMCode.PlayerAttacks.*;
-import SSMEngines.AudioUtility;
+import SSMEngines.AnimationPanel;
+import SSMEngines.util.AudioUtility;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import javax.sound.sampled.Clip;
 import SSMCode.*;
+import SSMEngines.SSMLauncher;
 
 import java.net.*;
 import java.io.*;
@@ -23,7 +25,7 @@ import javax.swing.*;
  *
  * @author 22cloteauxm
  */
-public class SSMEngine extends AnimationPanel{
+public class GameEngine extends AnimationPanel {
 
     //------------------------------------------------------------
     //Constants
@@ -71,9 +73,7 @@ public class SSMEngine extends AnimationPanel{
     private String ipAddress;
     private int playerMode;
     private String bossCode = "Zbogck";
-    
-    //Networking variables
-    private Socket socket;
+
     private int playerID;
     private ReadFromServer rfsRunnable;
     private WriteToServer wtsRunnable;
@@ -100,7 +100,7 @@ public class SSMEngine extends AnimationPanel{
     //------------------------------------------------------------
     //Constructor
     //------------------------------------------------------------
-    public SSMEngine() {
+    public GameEngine() {
         super("Super Smash Mateis", 1100,650);
         connecting = "to Connect ";
         
@@ -986,7 +986,8 @@ public class SSMEngine extends AnimationPanel{
         try{
             String port = "80";
 
-            socket = new Socket(ipAddress,Integer.parseInt(port));
+            //Networking variables
+            Socket socket = new Socket(ipAddress, Integer.parseInt(port));
             System.out.println("Connected!");
             
             InputStream inStream = socket.getInputStream();
@@ -1467,8 +1468,6 @@ public class SSMEngine extends AnimationPanel{
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
     }
-    
-
     private void playSFXClip(Clip c){
         if(c!=null){
             c.stop();

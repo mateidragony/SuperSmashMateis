@@ -12,7 +12,7 @@ package SSMCode.PlayerAttacks;
 
 import SSMCode.Actor;
 import SSMCode.Player;
-import SSMEngines.AudioUtility;
+import SSMEngines.util.AudioUtility;
 import java.awt.*;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package SSMEngines;
+package SSMEngines.old;
 
 
 /**
@@ -8,9 +8,8 @@ package SSMEngines;
  * @author Travis Rother 
  * @version 2-25-2008
 */
-import java.awt.*;
+
 import java.awt.event.*;
-import java.util.Scanner;
 import javax.swing.*;
 
 
@@ -18,7 +17,7 @@ public class SuperSmashMateis
 {
 
     int FPS = 60;   //Frames per second (animation speed)
-    SSMEngine world = new SSMEngine();    
+    GameEngine world = new GameEngine();
     
     //==============================================================================
     //--- Typically you will never need to edit any of the code below this line. ---

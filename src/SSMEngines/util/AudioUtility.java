@@ -1,4 +1,4 @@
-package SSMEngines;
+package SSMEngines.util;
 
 import java.io.File;
 import javax.sound.sampled.AudioInputStream;

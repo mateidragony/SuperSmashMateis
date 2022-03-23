@@ -1,4 +1,4 @@
-package SSMEngines;
+package SSMEngines.old;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -28,9 +28,7 @@ public class GameServer {
     private boolean p1DC, p2DC;
     
     private final int port;
-    
-    private Socket p1Socket;
-    private Socket p2Socket;
+
     private ReadFromClient p1ReadRunnable;
     private ReadFromClient p2ReadRunnable;
     private WriteToClient p1WriteRunnable;
@@ -88,7 +86,6 @@ public class GameServer {
                 WriteToClient wtc = new WriteToClient(numPlayers, out);
                 
                 if(numPlayers == 1) {
-                    p1Socket = s;
                     p1ReadRunnable = rfc;
                     p1WriteRunnable = wtc;
                     Thread readThread1 = new Thread(p1ReadRunnable);
@@ -105,8 +102,7 @@ public class GameServer {
                         ex.printStackTrace();
                     }
                     writeThread1.start();
-                } else {                    
-                    p2Socket = s;
+                } else {
                     p2ReadRunnable = rfc;
                     p2WriteRunnable = wtc;
                     Thread readThread2 = new Thread(p2ReadRunnable);
