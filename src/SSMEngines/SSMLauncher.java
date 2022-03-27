@@ -97,8 +97,10 @@ public class SSMLauncher extends JPanel implements MouseListener, MouseMotionLis
         Ellipse2D news = new Ellipse2D.Float(603,118,64,64);
 
         for(int i=0; i<rects.size(); i++){
-            if(rects.get(i).contains(mouseX,mouseY))
-                playerMode = i+1;
+            if(rects.get(i).contains(mouseX,mouseY)) {
+                playerMode = i + 1;
+                ipInput.setText("IP");
+            }
         }
 
         if(help.contains(mouseX,mouseY)) {
@@ -373,6 +375,13 @@ public class SSMLauncher extends JPanel implements MouseListener, MouseMotionLis
         ipInput.setSize(new Dimension(150,30));
         ipInput.setBorder(BorderFactory.createEmptyBorder(5,10,5,10));
         ipInput.setFont(new Font(Font.SERIF, Font.PLAIN, 20));
+
+        ipInput.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                ipInput.setText("");
+            }
+        });
 
         panel.add(nameInput);
         panel.add(Box.createRigidArea(new Dimension(0,130)));

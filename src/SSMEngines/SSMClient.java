@@ -4,6 +4,7 @@ import SSMEngines.util.Drawer;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
 import javax.swing.*;
@@ -19,8 +20,10 @@ public class SSMClient extends AnimationPanel{
         drawer = new Drawer(1100,650);
 
         setUpLauncher();
-        if(playerMode > 1)
-            connectToServer();
+        if(playerMode == 1)
+            ipAddress = "localhost";
+
+        connectToServer();
     }
 
 
@@ -56,9 +59,6 @@ public class SSMClient extends AnimationPanel{
 
             InputStream inStream = socket.getInputStream();
             OutputStream outStream = socket.getOutputStream();
-//
-//            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
-//            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
             
             ObjectOutputStream out = new ObjectOutputStream(outStream);
             ObjectInputStream in = new ObjectInputStream(inStream);
@@ -88,7 +88,6 @@ public class SSMClient extends AnimationPanel{
 
             while(true){
                 try {
-                  //  Thread.sleep(1000/SSMRunner.FPS);
                     drawer.unpack(dataIn.readUTF());
                 } catch(IOException e){
                     e.printStackTrace();
@@ -116,9 +115,7 @@ public class SSMClient extends AnimationPanel{
             while(true){
                 try {
                     dataOut.writeUTF(packCommands());
-                   
                     dataOut.flush();
-                  //  Thread.sleep(1000/SSMRunner.FPS);
                 } catch(IOException e){
                     e.printStackTrace();
                 }
@@ -140,6 +137,9 @@ public class SSMClient extends AnimationPanel{
         str += l + parseChar;
         str += p + parseChar;
         str += enter + parseChar;
+        str += mouseX + parseChar;
+        str += mouseY + parseChar;
+        str += mousePressed + parseChar;
 
         return str;
     }
@@ -182,7 +182,7 @@ public class SSMClient extends AnimationPanel{
 
 
     private boolean up,down,left,right;
-    private boolean j,k,l,p,enter;
+    private boolean j,k,l,p,enter,mousePressed;
 
     public void keyTyped(KeyEvent e) {
         char c = e.getKeyChar();
@@ -230,6 +230,13 @@ public class SSMClient extends AnimationPanel{
             enter=false;
         if(v==KeyEvent.VK_P)
             p=false;
+    }
+
+    public void mousePressed(MouseEvent e){
+        mousePressed = true;
+    }
+    public void mouseReleased(MouseEvent e){
+        mousePressed = false;
     }
 
 

@@ -2,7 +2,6 @@ package SSMEngines;
 
 import SSMEngines.util.Animator;
 
-import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +14,6 @@ public class SSMServer {
     private int numPlayers;
     private final int maxPlayers;
 
-    List<List<Boolean>> playerMoves;
     Animator animator;
 
     public SSMServer(){
@@ -25,12 +23,6 @@ public class SSMServer {
 
         animator = new Animator();
 
-        playerMoves = new ArrayList<>();
-        playerMoves.add(new ArrayList<>());
-        playerMoves.add(new ArrayList<>());
-        playerMoves.add(new ArrayList<>());
-        playerMoves.add(new ArrayList<>());
-
         int port = 80;
         System.out.println("The port is: "+port);
         try{
@@ -38,6 +30,7 @@ public class SSMServer {
 
         } catch(IOException ex){
             ex.printStackTrace();
+            System.exit(666);
         }
     }
 
@@ -57,9 +50,9 @@ public class SSMServer {
 
         while(true){
 
-            animator.animate(playerMoves);
+            animator.animate();
 
-            try{Thread.sleep(2000/SSMRunner.FPS);}catch (InterruptedException ex){ex.printStackTrace();}
+            try{Thread.sleep(1000/SSMRunner.FPS);}catch (InterruptedException ex){ex.printStackTrace();}
 
         }
 
@@ -75,10 +68,6 @@ public class SSMServer {
             InputStream inStream = s.getInputStream();
             OutputStream outStream = s.getOutputStream();
 
-//            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
-//            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
-
-            
             ObjectOutputStream out = new ObjectOutputStream(outStream);
             ObjectInputStream in = new ObjectInputStream(inStream);
             out.writeInt(numPlayers);
@@ -88,11 +77,9 @@ public class SSMServer {
             WriteToClient wtc = new WriteToClient(numPlayers, out);
 
             Thread readThread1 = new Thread(rfc);
-        //    Thread.sleep(16);
             readThread1.start();
 
             Thread writeThread1 = new Thread(wtc);
-          //  Thread.sleep(16);
             writeThread1.start();
 
             numPlayers++;
@@ -113,25 +100,13 @@ public class SSMServer {
             dataIn = in;
         }
 
-        public void unpack(String str, int pID){
-            String[] strData = str.split(SSMClient.parseChar);
-            List<Boolean> data = new ArrayList<>();
-
-            for(String s:strData){
-                data.add(Boolean.parseBoolean(s));
-            }
-
-            playerMoves.set(pID,data);
-        }
-
         public void run(){
 
             while(true){
                 try {
                     String str = dataIn.readUTF();
-                    unpack(str, playerID);
+                    animator.unpack(str, playerID);
 
-                   // Thread.sleep(1000/SSMRunner.FPS);
                 } catch(IOException ex){
                     ex.printStackTrace();
                     System.exit(666);
@@ -156,9 +131,8 @@ public class SSMServer {
             while(true){
                 try {
                     dataOut.writeUTF(animator.pack());
-                   dataOut.flush();
-                  //  Thread.sleep(1000/SSMRunner.FPS);
-                } catch(IOException  ex){
+                    dataOut.flush();
+                } catch(IOException ex){
                     ex.printStackTrace();
                     System.exit(666);
                 }
@@ -166,11 +140,4 @@ public class SSMServer {
 
         }
     }
-
-
-//    public static void main(String[] args){
-//        runServer();
-//    }
-//
-
 }

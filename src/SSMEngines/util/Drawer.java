@@ -8,6 +8,8 @@ public class Drawer {
 
     private final int width,height;
 
+    private String connecting;
+
     public Drawer(int w, int h){
         width = w;
         height = h;
