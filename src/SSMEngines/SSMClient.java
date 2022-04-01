@@ -158,17 +158,15 @@ public class SSMClient extends AnimationPanel{
         myFrame.setSize(launcher.getPreferredSize());
         myFrame.setLocation(300,50);
 
-        launcher.idkWhyIHaveToDoThisButThisIsKindaDum();
 
         while(!launcher.shouldLaunch()){
             myFrame.getComponent(0).repaint();
-            launcher.setFrameLocations(myFrame);
+            launcher.setComponentLocations();
 
             try{Thread.sleep(16);}catch(InterruptedException ex){ex.printStackTrace();}
         }
 
         myFrame.setVisible(false);
-        launcher.noVisible();
 
         playerMode = launcher.getPlayerMode();
         myName = launcher.getPlayerName();

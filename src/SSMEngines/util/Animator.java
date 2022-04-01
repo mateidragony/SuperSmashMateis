@@ -74,7 +74,7 @@ public class Animator {
 
 
     public void initArrayLists(){
-        
+
     }
 
 
