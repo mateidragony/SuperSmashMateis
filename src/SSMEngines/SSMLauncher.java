@@ -8,9 +8,6 @@ import java.util.ArrayList;
 
 public class SSMLauncher extends JPanel {
 
-    private final String nameHint = "Enter Player Name";
-    private final String ipHint = "Enter IP Address";
-
     private int playerMode;
 
     private JFrame helpFrame;
@@ -20,6 +17,9 @@ public class SSMLauncher extends JPanel {
     private HintTextField ipInput;
     private JComboBox playerModeSelector;
     private JCheckBox hostServer;
+    private JButton helpButt;
+    private JButton patchNotesButt;
+    private JButton startButt;
 
     private String patchNotes;
     private String helpNotes;
@@ -28,7 +28,7 @@ public class SSMLauncher extends JPanel {
 
     private boolean shouldLaunch;
 
-    private Image bg;
+    private final Image bg;
 
     public SSMLauncher() {
 
@@ -54,31 +54,42 @@ public class SSMLauncher extends JPanel {
         g.setColor(Color.black);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 25));
 
+        playerMode = playerModeSelector.getSelectedIndex();
 
-        ipInput.setVisible(playerMode > 1);
+
+        if(playerMode == 1) {
+            hostServer.setSelected(true);
+            hostServer.setEnabled(false);
+        } else
+            hostServer.setEnabled(true);
+
+        if(playerMode == 1 || hostServer.isSelected()){
+            ipInput.setText("localhost");
+            ipInput.setForeground(Color.BLACK);
+            ipInput.setFont(new Font("Tahoma", Font.PLAIN, 15));
+            ipInput.setEnabled(false);
+        } else{
+            if(ipInput.getText().equals("localhost"))
+                ipInput.resetHint();
+            ipInput.setEnabled(true);
+        }
 
         ipAddress = ipInput.getText();
         playerName = nameInput.getText();
-        playerMode = playerModeSelector.getSelectedIndex();
 
-        //if (readyToLaunch())
-            //g.drawImage(bigManButt, 350 - 99, 385, 198, 68, this);
+        if (readyToLaunch())
+            startButt.setVisible(true);
+        else
+            startButt.setVisible(false);
+
         setComponentLocations();
     }
 
 
-    public boolean shouldLaunch() {
-        return shouldLaunch;
-    }
-    public int getPlayerMode() {
-        return playerMode;
-    }
-    public String getIP() {
-        return ipAddress;
-    }
-    public String getPlayerName() {
-        return playerName;
-    }
+    public boolean shouldLaunch() {return shouldLaunch;}
+    public int getPlayerMode() {return playerMode;}
+    public String getIP() {return ipAddress;}
+    public String getPlayerName() {return playerName;}
 
 
     public void handleMouseClicks() {
@@ -115,10 +126,14 @@ public class SSMLauncher extends JPanel {
 
 
     public void setComponentLocations() {
-        nameInput.setLocation(10, 190);
-        ipInput.setLocation(10, 250);
-        hostServer.setLocation(10,310);
-        playerModeSelector.setLocation(10, 370);
+        nameInput.setLocation(25, 190);
+        ipInput.setLocation(25, 250);
+        hostServer.setLocation(25,310);
+        playerModeSelector.setLocation(25, 370);
+        startButt.setLocation(25,430);
+
+        patchNotesButt.setLocation(350,23);
+        helpButt.setLocation(570,23);
     }
 
     public void initHelpFrame() {
@@ -303,10 +318,12 @@ public class SSMLauncher extends JPanel {
 
     }
     public void initInputFrame() {
+        String nameHint = "Enter Player Name";
         nameInput = new HintTextField(nameHint);
         nameInput.setPreferredSize(new Dimension(200, 40));
         nameInput.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
+        String ipHint = "Enter IP Address";
         ipInput = new HintTextField(ipHint);
         ipInput.setPreferredSize(new Dimension(200, 40));
         ipInput.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -321,14 +338,50 @@ public class SSMLauncher extends JPanel {
         hostServer.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         hostServer.setFont(new Font("Tahoma", Font.PLAIN, 15));
 
+        patchNotesButt = new JButton("Patch Notes");
+        patchNotesButt.setPreferredSize(new Dimension(180,60));
+        patchNotesButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        patchNotesButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        patchNotesButt.addActionListener(e -> {
+            newsFrame.setVisible(true);
+            newsFrame.toFront();
+            newsFrame.requestFocus();
+        });
+
+        helpButt = new JButton("How to Play");
+        helpButt.setPreferredSize(new Dimension(180,60));
+        helpButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        helpButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        helpButt.addActionListener(e -> {
+            helpFrame.setVisible(true);
+            helpFrame.toFront();
+            helpFrame.requestFocus();
+        });
+
+        startButt = new JButton(new ImageIcon("SSMImages/launchButton.png"));
+        startButt.setPreferredSize(new Dimension(200,74));
+        startButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        startButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        startButt.setVisible(false);
+        startButt.addActionListener(e -> shouldLaunch=true);
+        startButt.setOpaque(false);
+        startButt.setBorderPainted(false);
+
+
         this.add(playerModeSelector);
         this.add(nameInput);
         this.add(ipInput);
         this.add(hostServer);
+        this.add(patchNotesButt);
+        this.add(helpButt);
+        this.add(startButt);
+
+        startButt.requestFocus();
     }
 
     public boolean readyToLaunch() {
-        return playerMode == 1 || (ipAddress.split("\\.").length == 4) || ipAddress.equals("localhost");
+        return (playerMode == 1 || (ipAddress.split("\\.").length == 4) || ipAddress.equals("localhost"))
+                && playerMode != 0;
     }
 
     public static void main(String[] args) {
@@ -357,12 +410,23 @@ public class SSMLauncher extends JPanel {
     }
 
 
-    private class HintTextField extends JTextField {
+    private static class HintTextField extends JTextField {
 
         Font gainFont = new Font("Tahoma", Font.PLAIN, 15);
         Font lostFont = new Font("Tahoma", Font.ITALIC, 15);
 
+        String hintText;
+
+        public void resetHint(){
+            setText(hintText);
+            setFont(lostFont);
+            setForeground(Color.GRAY);
+        }
+
+
         public HintTextField(final String hint) {
+
+            hintText = hint;
 
             setText(hint);
             setFont(lostFont);
@@ -395,7 +459,6 @@ public class SSMLauncher extends JPanel {
                     }
                 }
             });
-
         }
     }
 }
