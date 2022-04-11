@@ -1,5 +1,7 @@
 package SSMEngines;
 
+import SSMCode.Player;
+import SSMEngines.util.Animator;
 import SSMEngines.util.Drawer;
 
 import java.awt.*;
@@ -7,37 +9,72 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class SSMClient extends AnimationPanel{
 
     private final Drawer drawer;
+    private final int width = AnimationPanel.width;
+    private final int height = AnimationPanel.height;
 
+    private int screenNumber;
+    private boolean allConnected;
+    private String connecting;
 
     public SSMClient() {
-        super("Super Smash Mateis", 1100,650);
-
-        drawer = new Drawer(1100,650);
+        super("Super Smash Mateis");
 
         setUpLauncher();
-        if(playerMode == 1)
-            ipAddress = "localhost";
-
         connectToServer();
+
+        drawer = new Drawer(playerID,playerMode);
+        connecting = "to Connect ";
+
+        screenNumber = Animator.CHARACTER_SELECT_SCREEN;
     }
-
-
 
 
     public void renderFrame(Graphics g){
-        drawer.draw(g);
+
+        if(screenNumber == Animator.INTRO_SCREEN){
+            g.setColor(Color.black);
+            g.fillRect(0,0,width,height);
+            g.drawImage(introScreen, 0,0,width,height,this);
+            //if you press enter, move on to the next screen
+            if(enter) {
+                screenNumber++;
+                enter = false;
+            }
+        }else if(screenNumber == Animator.LOADING_SCREEN){
+            //draws background and sets up writing color/font
+            g.setColor(Color.black);
+            g.fillRect(0, 0, width, height);
+            g.setColor(Color.white);
+            g.setFont(new Font("Sans Serif", Font.BOLD, 60));
+
+            //if not all players are connected, write waiting for players
+            if(!allConnected){
+                g.drawString("Waiting for Player(s)", 150, 150);
+
+                if(frameNumber%60==0)
+                    connecting+=".";
+                if(frameNumber%240==0)
+                    connecting = "to Connect ";
+
+                g.drawString(connecting, 200, 250);
+            }
+            else {
+                g.drawString("All Players Have Connected", 150, 150);
+                g.drawString("Press Enter to Start", 150, 250);
+
+                if(enter)
+                    screenNumber++;
+            }
+        }else{
+            drawer.draw(g,this, new Point(mouseX,mouseY));
+        }
     }
-
-
-
-
-
-
 
 
     //------------------------------------------------------------
@@ -46,6 +83,7 @@ public class SSMClient extends AnimationPanel{
 
     private int playerMode;
     private int playerID;
+    private String playerName;
     private ReadFromServer rfsRunnable;
     private WriteToServer wtsRunnable;
     private String ipAddress;
@@ -63,14 +101,15 @@ public class SSMClient extends AnimationPanel{
             ObjectOutputStream out = new ObjectOutputStream(outStream);
             ObjectInputStream in = new ObjectInputStream(inStream);
 
-            
             playerID = in.readInt();
             System.out.println("You are player #"+playerID);
-            if(playerID == 1)
+
+            if(playerID != playerMode-1)
                 System.out.println("Waiting for other player(s) to connect...");
             rfsRunnable = new ReadFromServer(in);
             wtsRunnable = new WriteToServer(out);
             rfsRunnable.startThreads();
+
         }catch(IOException ex){
             ex.printStackTrace();
         }
@@ -88,6 +127,7 @@ public class SSMClient extends AnimationPanel{
 
             while(true){
                 try {
+                    allConnected = dataIn.readBoolean();
                     drawer.unpack(dataIn.readUTF());
                 } catch(IOException e){
                     e.printStackTrace();
@@ -114,7 +154,7 @@ public class SSMClient extends AnimationPanel{
 
             while(true){
                 try {
-                    dataOut.writeUTF(packCommands());
+                    dataOut.writeUTF(packInfo());
                     dataOut.flush();
                 } catch(IOException e){
                     e.printStackTrace();
@@ -124,22 +164,31 @@ public class SSMClient extends AnimationPanel{
     }
 
 
+    /*
+    SSMClient Parse Char = "," (Separates each individual primitive data type)
+    Animator Parse Char = ";" (Separates the game data and each individual players' data)
+    Player Parse Char = "/" (Separates player data and each attack/attack array)
+    Projectile Parse Char = "&" (Separates each attack in an array of attacks)
+     */
+
     public static final String parseChar = ",";
 
-    public String packCommands(){
+    public String packInfo(){
         String str = "";
-        str += up + parseChar;
-        str += down + parseChar;
-        str += left + parseChar;
-        str += right + parseChar;
-        str += j + parseChar;
-        str += k + parseChar;
-        str += l + parseChar;
-        str += p + parseChar;
-        str += enter + parseChar;
-        str += mouseX + parseChar;
-        str += mouseY + parseChar;
-        str += mousePressed + parseChar;
+        str += up + parseChar; //0
+        str += down + parseChar; //1
+        str += left + parseChar; //2
+        str += right + parseChar; //3
+        str += j + parseChar; //4
+        str += k + parseChar; //5
+        str += l + parseChar; //6
+        str += p + parseChar; //7
+        str += enter + parseChar; //8
+        str += mouseX + parseChar; //9
+        str += mouseY + parseChar; //10
+        str += mousePressed + parseChar; //11
+
+        str += playerName + parseChar; //12
 
         return str;
     }
@@ -166,18 +215,31 @@ public class SSMClient extends AnimationPanel{
             try{Thread.sleep(16);}catch(InterruptedException ex){ex.printStackTrace();}
         }
 
-        myFrame.setVisible(false);
-
         playerMode = launcher.getPlayerMode();
-        myName = launcher.getPlayerName();
+        playerName = launcher.getPlayerName();
         ipAddress =  launcher.getIP();
-    }
 
+        if(launcher.hostServer()){
+            Thread server = new Thread(() -> SSMServer.runServer(playerMode));
+            server.start();
+        }
+
+        for(int i=0; i<125; i++) {
+            try {
+                myFrame.getComponent(0).repaint();
+                launcher.setComponentLocations();
+                Thread.sleep(16);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        myFrame.setVisible(false);
+    }
 
     //------------------------------------------------------------
     //Respond to Keyboard Events
     //------------------------------------------------------------
-
 
     private boolean up,down,left,right;
     private boolean j,k,l,p,enter,mousePressed;
@@ -238,4 +300,20 @@ public class SSMClient extends AnimationPanel{
     }
 
 
+
+    //------------------------------------------------------------
+    //Respond to Keyboard Events
+    //------------------------------------------------------------
+
+    private Image introScreen;
+
+    public void initGraphics(){
+        Player.initImages();
+
+        try {
+            introScreen = ImageIO.read(new File("SSMImages/introScreen.png"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -5,6 +5,8 @@
  */
 package SSMCode;
 
+import SSMEngines.old.PlayerOld;
+
 import java.awt.*;
 import java.awt.image.ImageObserver;
 import java.util.ArrayList;
@@ -32,9 +34,9 @@ public class Platform extends GameObject {
             g.drawImage(bigPlatImg,(int)getX(),(int)getY(),getW(),getH(), io);
     }
     
-    public void animate(ArrayList<Player> playerList, ArrayList<Platform> platList){
+    public void animate(ArrayList<PlayerOld> playerList, ArrayList<Platform> platList){
         
-        for(Player player: playerList){
+        for(PlayerOld player: playerList){
             for(Platform p: platList){
                 if(p.getW()<600){
                     if((player.getYVel()>=0 

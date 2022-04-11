@@ -5,8 +5,11 @@
  */
 package SSMCode.PlayerAttacks;
 
-import SSMCode.*;
+import SSMCode.Player;
+import SSMEngines.old.PlayerOld;
+
 import java.awt.*;
+import java.util.ArrayList;
 
 /**
  *
@@ -14,14 +17,24 @@ import java.awt.*;
  */
 public class HomingShot extends Projectile{
     
-    private static Image myImage;
-    
-    public HomingShot(int x,int y, int direction, String team, boolean sfx){
-        super(x,y,30,30,direction,team,sfx);
+    public HomingShot(int x,int y, int direction, String team, int shooter, boolean bossMode, boolean sfx){
+        super(x,y,30,30,direction,team,shooter,bossMode,sfx);
     }
     
-    public void animateMovement(Player target){
-        double meTargetHypot = Math.pow(Math.pow(target.getX()-getX(),2)+Math.pow(target.getY()-getY(),2),0.5);
+    public void animateMovement(ArrayList<Player> targets){
+        double meTargetHypot = 99999;
+        int bestIndex = 0;
+
+        for(int i=0; i<targets.size(); i++){
+            Player target = targets.get(i);
+            double testHypot = Math.pow(Math.pow(target.getX()-getX(),2)+Math.pow(target.getY()-getY(),2),0.5);
+            if(testHypot<meTargetHypot){
+                meTargetHypot = testHypot;
+                bestIndex = i;
+            }
+        }
+
+        Player target = targets.get(bestIndex);
         
         setXVel(3*((target.getX()-getX())/meTargetHypot));
         setYVel(3*((target.getY()-getY()) /meTargetHypot));
@@ -32,6 +45,6 @@ public class HomingShot extends Projectile{
             setDirection(Projectile.LEFT);
         
         setY(getY()+getYVel());
-        super.animateMovement(target);
+        super.animateMovement(targets);
     }
 }

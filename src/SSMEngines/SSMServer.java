@@ -5,8 +5,7 @@ import SSMEngines.util.Animator;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.SocketException;
 
 public class SSMServer {
 
@@ -14,13 +13,17 @@ public class SSMServer {
     private int numPlayers;
     private final int maxPlayers;
 
+    private boolean allConnected;
+
     Animator animator;
 
-    public SSMServer(){
+    public SSMServer(int maxPlayers) throws SocketException {
         System.out.println("==== Game Server ====");
         numPlayers = 0;
-        maxPlayers = 1;
+        this.maxPlayers = maxPlayers;
 
+    //    ss.setReceiveBufferSize(2000);
+        //ss.setReceiveBufferSize(2000);
         animator = new Animator();
 
         int port = 80;
@@ -35,9 +38,9 @@ public class SSMServer {
     }
 
 
-    public static void runServer(){
+    public static void runServer(int playerNum){
         try {
-            SSMServer server = new SSMServer();
+            SSMServer server = new SSMServer(playerNum);
             server.acceptConnections();
             server.animate();
         } catch(IOException | InterruptedException ex){
@@ -65,13 +68,15 @@ public class SSMServer {
         while(numPlayers<maxPlayers) {
             Socket s = ss.accept();
             s.setTcpNoDelay(true);
+
             InputStream inStream = s.getInputStream();
             OutputStream outStream = s.getOutputStream();
 
             ObjectOutputStream out = new ObjectOutputStream(outStream);
             ObjectInputStream in = new ObjectInputStream(inStream);
+
             out.writeInt(numPlayers);
-            System.out.println("Player #" + numPlayers + " has connected");
+            System.out.println(numPlayers+1+" player(s) are connected");
 
             ReadFromClient rfc = new ReadFromClient(numPlayers, in);
             WriteToClient wtc = new WriteToClient(numPlayers, out);
@@ -86,6 +91,7 @@ public class SSMServer {
         }
 
         System.out.println("All Connected!");
+        allConnected = true;
 
     }
 
@@ -104,8 +110,10 @@ public class SSMServer {
 
             while(true){
                 try {
+
                     String str = dataIn.readUTF();
                     animator.unpack(str, playerID);
+
 
                 } catch(IOException ex){
                     ex.printStackTrace();
@@ -118,11 +126,9 @@ public class SSMServer {
 
     private class WriteToClient implements Runnable{
 
-        private final int playerID;
         private final ObjectOutputStream dataOut;
 
         public WriteToClient(int pID, ObjectOutputStream in){
-            playerID = pID;
             dataOut = in;
         }
 
@@ -130,6 +136,7 @@ public class SSMServer {
 
             while(true){
                 try {
+                    dataOut.writeBoolean(allConnected);
                     dataOut.writeUTF(animator.pack());
                     dataOut.flush();
                 } catch(IOException ex){

@@ -1,22 +1,19 @@
 package SSMEngines.util;
 
 import SSMCode.MapHandler;
-import SSMCode.Platform;
 import SSMCode.Player;
-import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.SSMClient;
-import SSMEngines.old.GameEngine;
 
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Animator {
+
 
 
     //------------------------------------------------------------
@@ -32,7 +29,6 @@ public class Animator {
 
     public static final int UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3;
     public static final int J = 4, K = 5, L = 6, P = 7, ENTER = 8;
-    public static final int MOUSEX = 9, MOUSEY = 10, CLICK = 11;
 
     private final Font myFont = new Font("Sans Serif", Font.BOLD, 60);
     private final DecimalFormat df = new DecimalFormat("####.#");
@@ -56,63 +52,117 @@ public class Animator {
     private List<Boolean> playAgain;
     private boolean disconnected;
 
+    private MapHandler mapHandler;
+
+    //Sent from client (Player inputs)
+    private List<List<Boolean>> playerMoves;
     private List<Point> mouseCoords;
     private List<Boolean> clicks;
 
-    private MapHandler mapHandler;
-    private List<List<Boolean>> playerMoves;
-
-    private int x,y;
-
     public Animator(){
-        x=100;
-        y=400;
-
-        playerMoves = Stream.generate(ArrayList<Boolean>::new).limit(4).collect(Collectors.toList());
-        mouseCoords = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
+        screenNumber = CHARACTER_SELECT_SCREEN;
+        initArrayLists();
+        Player.initImages();
     }
-
 
     public void initArrayLists(){
-
+        //List of 4 dummies at (0,0) size (40,60) id 0->3
+        players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
+        //4 blank arraylists
+        playerMoves = Stream.generate(ArrayList<Boolean>::new).limit(4).collect(Collectors.toList());
+        //4 points at 0,0
+        mouseCoords = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
+        //3 false booleans
+        clicks = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
     }
+
 
 
     public void animate(){
+        if(screenNumber == CHARACTER_SELECT_SCREEN)
+            animateCharacterSelect();
+        else if(screenNumber == MAP_SELECT)
+            animateMapSelect();
+        else if(screenNumber == IN_GAME_SCREEN)
+            animateGame();
+    }
 
-        if(!playerMoves.isEmpty() && !playerMoves.get(0).isEmpty()) {
-            if (playerMoves.get(0).get(0)) {
-                y -= 5;
-            }
-            if (playerMoves.get(0).get(1)) {
-                y += 5;
-            }
-            if (playerMoves.get(0).get(2)) {
-                x -= 5;
-            }
-            if (playerMoves.get(0).get(3)) {
-                x += 5;
-            }
-        }
+    public void animateCharacterSelect(){
+        //if a player clicks on an image they become that character
+        handleMouseEventsCharacterSelect();
+    }
+    public void animateMapSelect(){
+
+    }
+    public void animateGame(){
 
     }
 
+
+    int imageSize = 90; double imgHeightRatio = 1.5/1.3;
+    int imgsPerRow = 9; int imgOffset = 10;
+    int xOffset = 100; int yOffset = 100;
+
+    public void handleMouseEventsCharacterSelect(){
+        ArrayList<Rectangle> imageRects = new ArrayList<>();
+
+        for(int i = 0; i< Player.getImages().size()-1; i+=1) {
+            int imageX = xOffset+(i%imgsPerRow)*(imageSize+imgOffset);
+            int imageY = yOffset+((int)(imageSize*imgHeightRatio)+imgOffset)*(i/imgsPerRow);
+            int imageHeight = (int)(imageSize*imgHeightRatio);
+
+            imageRects.add(new Rectangle(imageX-5,imageY-5,imageSize+10,imageHeight+10));
+        }
+
+        for(int i=0; i<mouseCoords.size();i++) {
+            Point mouse = mouseCoords.get(i);
+
+            if(clicks.get(i)) {
+                for (int j = 0; j < imageRects.size(); j++) {
+                    Rectangle r = imageRects.get(j);
+                    if (r.contains(mouse)) {
+                        players.get(i).setCharacter(j);
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    public static String parseChar = ";";
+
     public String pack(){
         String data = "";
-        data+= x + SSMClient.parseChar;
-        data+= y + SSMClient.parseChar;
+        //Game data
+        data+=screenNumber+SSMClient.parseChar;
+
+        data+= parseChar;
+
+        //Player info
+        for(Player p: players) {
+            if(p == null)
+                data = data.concat("null"+parseChar);
+            else
+                data = data.concat(p.pack() + parseChar);
+        }
+
         return data;
     }
     public void unpack(String str, int pID){
         String[] strData = str.split(SSMClient.parseChar);
         List<Boolean> data = new ArrayList<>();
 
-        for(int i=0; i<=8; i++){
+
+        for (int i = 0; i <= 8; i++) {
             data.add(Boolean.parseBoolean(strData[i]));
         }
-        playerMoves.set(pID,data);
+        playerMoves.set(pID, data);
 
-        mouseCoords.set(pID,new Point(Integer.parseInt(strData[MOUSEX]),Integer.parseInt(strData[MOUSEY])));
-        clicks.set(pID,Boolean.parseBoolean(strData[CLICK]));
+        mouseCoords.set(pID, new Point(Integer.parseInt(strData[9]), Integer.parseInt(strData[10])));
+        clicks.set(pID, Boolean.parseBoolean(strData[11]));
+
+        players.get(pID).setPlayerName(strData[12]);
+
     }
 }

@@ -3,8 +3,6 @@ package SSMEngines;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.Ellipse2D;
-import java.util.ArrayList;
 
 public class SSMLauncher extends JPanel {
 
@@ -15,20 +13,23 @@ public class SSMLauncher extends JPanel {
 
     private HintTextField nameInput;
     private HintTextField ipInput;
-    private JComboBox playerModeSelector;
+    private JComboBox<String> playerModeSelector;
     private JCheckBox hostServer;
     private JButton helpButt;
     private JButton patchNotesButt;
     private JButton startButt;
+    private JProgressBar loading;
 
+    private int progress;
     private String patchNotes;
     private String helpNotes;
     private String ipAddress = " . . ";
     private String playerName = "Player Dwo";
 
-    private boolean shouldLaunch;
+    private boolean pressedStart;
 
     private final Image bg;
+    private final Image bg2;
 
     public SSMLauncher() {
 
@@ -36,6 +37,7 @@ public class SSMLauncher extends JPanel {
 
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         bg = toolkit.getImage("SSMImages/launcherScreen.png");
+        bg2 = toolkit.getImage("SSMImages/launcherScreenFG.png");
 
         initStrings();
         initHelpFrame();
@@ -50,6 +52,7 @@ public class SSMLauncher extends JPanel {
 
         //Image bigManButt = toolkit.getImage("SSMImages/launchButton.png");
         g.drawImage(bg, 0, 0, this);
+        g.drawImage(bg2,249,118,this);
 
         g.setColor(Color.black);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 25));
@@ -76,54 +79,32 @@ public class SSMLauncher extends JPanel {
 
         ipAddress = ipInput.getText();
         playerName = nameInput.getText();
+        startButt.setVisible(readyToLaunch());
+        loading.setValue(progress);
 
-        if (readyToLaunch())
-            startButt.setVisible(true);
-        else
-            startButt.setVisible(false);
+        if(pressedStart){
+            loading.setVisible(true);
+
+            ipInput.setEnabled(false);
+            nameInput.setEnabled(false);
+            hostServer.setEnabled(false);
+            playerModeSelector.setEnabled(false);
+
+            int addition = (int)(Math.random()*60)-30;
+            addition = Math.max(addition, 0);
+            progress+=addition;
+        }
 
         setComponentLocations();
     }
 
 
-    public boolean shouldLaunch() {return shouldLaunch;}
+    //public boolean shouldLaunch() {return loading.getPercentComplete() == 1;}
+    public boolean shouldLaunch() {return pressedStart;}
     public int getPlayerMode() {return playerMode;}
     public String getIP() {return ipAddress;}
     public String getPlayerName() {return playerName;}
-
-
-    public void handleMouseClicks() {
-
-        ArrayList<Rectangle> rects = new ArrayList<>();
-
-        rects.add(new Rectangle(57, 221, 103, 103));
-        rects.add(new Rectangle(217, 221, 103, 103));
-        rects.add(new Rectangle(379, 221, 103, 103));
-        rects.add(new Rectangle(539, 221, 103, 103));
-
-        Ellipse2D help = new Ellipse2D.Float(36, 118, 64, 64);
-        Ellipse2D news = new Ellipse2D.Float(603, 118, 64, 64);
-
-        for (int i = 0; i < rects.size(); i++) {
-            {
-                playerMode = i + 1;
-                ipInput.setText("IP");
-            }
-        }
-
-        {
-            helpFrame.setVisible(!true);
-            helpFrame.toFront();
-            helpFrame.requestFocus();
-        }
-         {
-            newsFrame.setVisible(!true);
-            newsFrame.toFront();
-            newsFrame.requestFocus();
-        }
-
-    }
-
+    public boolean hostServer(){return hostServer.isSelected();}
 
     public void setComponentLocations() {
         nameInput.setLocation(25, 190);
@@ -131,6 +112,7 @@ public class SSMLauncher extends JPanel {
         hostServer.setLocation(25,310);
         playerModeSelector.setLocation(25, 370);
         startButt.setLocation(25,430);
+        loading.setLocation(25,515);
 
         patchNotesButt.setLocation(350,23);
         helpButt.setLocation(570,23);
@@ -328,7 +310,7 @@ public class SSMLauncher extends JPanel {
         ipInput.setPreferredSize(new Dimension(200, 40));
         ipInput.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        playerModeSelector = new JComboBox(new String[]{"Player Mode", "Single Player", "2 Players", "3 players", "4 players"});
+        playerModeSelector = new JComboBox<>(new String[]{"Player Mode", "Single Player", "2 Players", "3 players", "4 players"});
         playerModeSelector.setPreferredSize(new Dimension(200, 40));
         playerModeSelector.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         playerModeSelector.setFont(new Font("Tahoma", Font.PLAIN, 15));
@@ -363,10 +345,14 @@ public class SSMLauncher extends JPanel {
         startButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         startButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
         startButt.setVisible(false);
-        startButt.addActionListener(e -> shouldLaunch=true);
+        startButt.addActionListener(e -> pressedStart=true);
         startButt.setOpaque(false);
         startButt.setBorderPainted(false);
 
+        loading = new JProgressBar();
+        loading.setPreferredSize(new Dimension(200,25));
+        loading.setMaximum(1000);
+        loading.setVisible(false);
 
         this.add(playerModeSelector);
         this.add(nameInput);
@@ -375,6 +361,7 @@ public class SSMLauncher extends JPanel {
         this.add(patchNotesButt);
         this.add(helpButt);
         this.add(startButt);
+        this.add(loading);
 
         startButt.requestFocus();
     }
@@ -402,9 +389,7 @@ public class SSMLauncher extends JPanel {
         myFrame.setSize(launcher.getPreferredSize());
         myFrame.setLocation(300, 50);
 
-        Timer t = new Timer(1000/60, timerRepaint -> {
-            myFrame.getComponent(0).repaint();
-        });
+        Timer t = new Timer(1000/60, timerRepaint -> myFrame.getComponent(0).repaint());
 
         t.start();
     }

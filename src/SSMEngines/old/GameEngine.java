@@ -51,8 +51,8 @@ public class GameEngine extends AnimationPanel {
     
     private final MapHandler myMapHandler;
     
-    private Player me, enemy;
-    private final ArrayList<Player> playerList;
+    private PlayerOld me, enemy;
+    private final ArrayList<PlayerOld> playerList;
     private ArrayList<Platform> platList;
     private ArrayList<Projectile> myPList;
     private ArrayList<Projectile> enemyPList;
@@ -93,7 +93,7 @@ public class GameEngine extends AnimationPanel {
     private boolean isRunning;
     private boolean chargingL, releaseL;
     
-    private final Player dummy;
+    private final PlayerOld dummy;
     
     private String cheatCode;
        
@@ -101,15 +101,15 @@ public class GameEngine extends AnimationPanel {
     //Constructor
     //------------------------------------------------------------
     public GameEngine() {
-        super("Super Smash Mateis", 1100,650);
+        super("Super Smash Mateis");
         connecting = "to Connect ";
         
         myPList = new ArrayList<>();
         enemyPList = new ArrayList<>();
         playerList = new ArrayList<>();
         
-        me = new Player(140,300,40,60,"blue");
-        enemy = new Player(900,300,40,60,"red");
+        me = new PlayerOld(140,300,40,60,"blue");
+        enemy = new PlayerOld(900,300,40,60,"red");
         
         playerList.add(me); playerList.add(enemy); 
                 
@@ -125,12 +125,12 @@ public class GameEngine extends AnimationPanel {
                 
         if(playerID == 0){
             enemyPlayAgain = true;
-            dummy = new Player(500,100,60,90,"blue");
-            dummy.setCharacter(Player.DUMMY);
+            dummy = new PlayerOld(500,100,60,90,"blue");
+            dummy.setCharacter(PlayerOld.DUMMY);
             playerList.add(dummy);
 
-            enemy = new Player(500,100,60,90,"blue");
-            enemy.setCharacter(Player.DUMMY);
+            enemy = new PlayerOld(500,100,60,90,"blue");
+            enemy.setCharacter(PlayerOld.DUMMY);
 
             playerList.remove(enemy);
             startedBossTheme = false;
@@ -241,11 +241,11 @@ public class GameEngine extends AnimationPanel {
         
         //draws the images of the characters
         int imageSize = 92;
-        for(int i=0; i<Player.getImages().size()-1;i+=1){
-            g.drawImage(Player.getImages().get(i),10+(i%5)*(imageSize+10),100+((int)(imageSize*1.5/2)+10)*(i/5)
+        for(int i = 0; i< PlayerOld.getImages().size()-1; i+=1){
+            g.drawImage(PlayerOld.getImages().get(i),10+(i%5)*(imageSize+10),100+((int)(imageSize*1.5/2)+10)*(i/5)
                     ,imageSize,(int)(imageSize*1.5/2),this);
             
-            g.drawImage(Player.getImages().get(i),10+(i%5)*(imageSize+10)+550,100+((int)(imageSize*1.5/2)+10)*(i/5)
+            g.drawImage(PlayerOld.getImages().get(i),10+(i%5)*(imageSize+10)+550,100+((int)(imageSize*1.5/2)+10)*(i/5)
                     ,imageSize,(int)(imageSize*1.5/2),this);
         }
         
@@ -346,7 +346,7 @@ public class GameEngine extends AnimationPanel {
             p.animate(playerList, platList);
         }
         
-        if(me.getChargingLAttackStrength() >= Player.MAX_L)
+        if(me.getChargingLAttackStrength() >= PlayerOld.MAX_L)
             releaseL = true;
         
         if(chargingL)
@@ -503,13 +503,13 @@ public class GameEngine extends AnimationPanel {
     
     public void initPlayers(){
         if(playerID == 1){
-            me = new Player(140,300,60,90,"blue");
-            enemy = new Player(900,300,60,90,"red");
+            me = new PlayerOld(140,300,60,90,"blue");
+            enemy = new PlayerOld(900,300,60,90,"red");
             me.setDirection(Projectile.RIGHT);
         }
         else{
-            enemy = new Player(140,300,60,90,"blue");
-            me = new Player(900,300,60,90,"red");
+            enemy = new PlayerOld(140,300,60,90,"blue");
+            me = new PlayerOld(900,300,60,90,"red");
             me.setDirection(Projectile.LEFT);
         }
         if(myName.isEmpty())
@@ -633,7 +633,7 @@ public class GameEngine extends AnimationPanel {
         else
             lAnimationTimer = 0;
         
-        if(me.getBoomerang()==null && me.getCharacter() == Player.LAWRENCE)
+        if(me.getBoomerang()==null && me.getCharacter() == PlayerOld.LAWRENCE)
             kAttackTimer = 0;
     }
     public void handleStartingGame(Graphics g){
@@ -653,65 +653,65 @@ public class GameEngine extends AnimationPanel {
     }
     public void handlePlayerImages(){
         if(me.getDirection() == Projectile.RIGHT){
-            if(me.isLAttacking() || (lAnimationTimer > 0 && me.getCharacter() != Player.MATEI)
-                    || (me.getCharacter() == Player.SPOCK && me.getPunch()!=null)
-                    || (me.getCharacter() == Player.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
-                me.setMyImageIndex(Player.L_ATTACK_FORWARD);
+            if(me.isLAttacking() || (lAnimationTimer > 0 && me.getCharacter() != PlayerOld.MATEI)
+                    || (me.getCharacter() == PlayerOld.SPOCK && me.getPunch()!=null)
+                    || (me.getCharacter() == PlayerOld.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
+                me.setMyImageIndex(PlayerOld.L_ATTACK_FORWARD);
                 isRunning = false;
             }  
             else if(me.chargingL()){
-                me.setMyImageIndex(Player.CHARGE_L_ATTACK_FORWARD);
+                me.setMyImageIndex(PlayerOld.CHARGE_L_ATTACK_FORWARD);
                 isRunning = false;
             }
             else if(me.getVPunch()!=null || me.getLightning() != null || me.getMoto()!=null || me.isHealing()){
-                me.setMyImageIndex(Player.K_ATTACK_FORWARD);
+                me.setMyImageIndex(PlayerOld.K_ATTACK_FORWARD);
                 isRunning = false;
             }
-            else if(me.getCharacter()!=Player.UMER && kAnimationTimer>0){
-                me.setMyImageIndex(Player.K_ATTACK_FORWARD);
+            else if(me.getCharacter()!= PlayerOld.UMER && kAnimationTimer>0){
+                me.setMyImageIndex(PlayerOld.K_ATTACK_FORWARD);
                 isRunning = false;
             }
-            else if(me.getPunch()!=null && me.getCharacter()!=Player.SPOCK){
-                me.setMyImageIndex(Player.J_ATTACK_FORWARD);
+            else if(me.getPunch()!=null && me.getCharacter()!= PlayerOld.SPOCK){
+                me.setMyImageIndex(PlayerOld.J_ATTACK_FORWARD);
                 isRunning = false;
             }
-            else if(me.getCharacter()!=Player.UMER && jAnimationTimer>0){
-                me.setMyImageIndex(Player.J_ATTACK_FORWARD);
+            else if(me.getCharacter()!= PlayerOld.UMER && jAnimationTimer>0){
+                me.setMyImageIndex(PlayerOld.J_ATTACK_FORWARD);
                 isRunning = false;
             }
             else if(me.getXVel() == 0){
-                me.setMyImageIndex(Player.STANDING_FORWARD);
+                me.setMyImageIndex(PlayerOld.STANDING_FORWARD);
                 isRunning = false;
             }
         } else {
-            if(me.isLAttacking() || (lAnimationTimer > 0 && me.getCharacter() != Player.MATEI)
-                    || (me.getCharacter() == Player.SPOCK && me.getPunch()!=null)
-                    || (me.getCharacter() == Player.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
-                me.setMyImageIndex(Player.L_ATTACK_BACKWARD);
+            if(me.isLAttacking() || (lAnimationTimer > 0 && me.getCharacter() != PlayerOld.MATEI)
+                    || (me.getCharacter() == PlayerOld.SPOCK && me.getPunch()!=null)
+                    || (me.getCharacter() == PlayerOld.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
+                me.setMyImageIndex(PlayerOld.L_ATTACK_BACKWARD);
                 isRunning = false;
             }  
             else if(me.chargingL()){
-                me.setMyImageIndex(Player.CHARGE_L_ATTACK_BACKWARD);
+                me.setMyImageIndex(PlayerOld.CHARGE_L_ATTACK_BACKWARD);
                 isRunning = false;
             }
             else if(me.getVPunch()!=null || me.getLightning() != null || me.getMoto()!=null || me.isHealing()){
-                me.setMyImageIndex(Player.K_ATTACK_BACKWARD);
+                me.setMyImageIndex(PlayerOld.K_ATTACK_BACKWARD);
                 isRunning = false;
             }
-            else if(me.getCharacter()!=Player.UMER && kAnimationTimer>0){
-                me.setMyImageIndex(Player.K_ATTACK_BACKWARD);
+            else if(me.getCharacter()!= PlayerOld.UMER && kAnimationTimer>0){
+                me.setMyImageIndex(PlayerOld.K_ATTACK_BACKWARD);
                 isRunning = false;
             }
-            else if(me.getPunch()!=null  && me.getCharacter()!=Player.SPOCK){
-                me.setMyImageIndex(Player.J_ATTACK_BACKWARD);
+            else if(me.getPunch()!=null  && me.getCharacter()!= PlayerOld.SPOCK){
+                me.setMyImageIndex(PlayerOld.J_ATTACK_BACKWARD);
                 isRunning = false;
             }
-            else if(me.getCharacter()!=Player.UMER && jAnimationTimer>0){
-                me.setMyImageIndex(Player.J_ATTACK_BACKWARD);
+            else if(me.getCharacter()!= PlayerOld.UMER && jAnimationTimer>0){
+                me.setMyImageIndex(PlayerOld.J_ATTACK_BACKWARD);
                 isRunning = false;
             }
             else if(me.getXVel() == 0){
-                me.setMyImageIndex(Player.STANDING_BACKWARD);
+                me.setMyImageIndex(PlayerOld.STANDING_BACKWARD);
                 isRunning = false;
             }
         }
@@ -724,13 +724,13 @@ public class GameEngine extends AnimationPanel {
             walkingTimer = 0.4;
         
         if(walkingTimer > 0.2 && me.getDirection() == Projectile.RIGHT)
-            me.setMyImageIndex(Player.RUNNING_FORWARD1);
+            me.setMyImageIndex(PlayerOld.RUNNING_FORWARD1);
         else if(walkingTimer > 0.2 && me.getDirection() == Projectile.LEFT)
-            me.setMyImageIndex(Player.RUNNING_BACKWARD1);
+            me.setMyImageIndex(PlayerOld.RUNNING_BACKWARD1);
         if(walkingTimer < 0.2 && me.getDirection() == Projectile.RIGHT)
-            me.setMyImageIndex(Player.RUNNING_FORWARD2);
+            me.setMyImageIndex(PlayerOld.RUNNING_FORWARD2);
         else if(walkingTimer < 0.2 && me.getDirection() == Projectile.LEFT)
-            me.setMyImageIndex(Player.RUNNING_BACKWARD2);
+            me.setMyImageIndex(PlayerOld.RUNNING_BACKWARD2);
         
     }
     public void handleCheatCodes(){
@@ -747,16 +747,16 @@ public class GameEngine extends AnimationPanel {
         if(cheatCode.contains("=")){
             cheatCode = "";
             me.setCharacter(me.getCharacter()+1);
-            if(me.getCharacter() >= Player.getImages().size())
+            if(me.getCharacter() >= PlayerOld.getImages().size())
                 me.setCharacter(0);
         }
         if(cheatCode.contains("-")){
             cheatCode = "";
             me.setCharacter(me.getCharacter()-1);
             if(me.getCharacter() < 0)
-                me.setCharacter(Player.getImages().size()-1);
+                me.setCharacter(PlayerOld.getImages().size()-1);
         }
-        if(cheatCode.contains(bossCode) && me.getCharacter()==Player.SPOCK){
+        if(cheatCode.contains(bossCode) && me.getCharacter()== PlayerOld.SPOCK){
             cheatCode = "";
             inGameMusic.stop();
             playSFXClip(spockBossMusic);
@@ -818,8 +818,8 @@ public class GameEngine extends AnimationPanel {
             g.drawString(me.getPlayerName(),180-me.getPlayerName().length()*5,485);
             g.drawString(enemy.getPlayerName(),width-220-enemy.getPlayerName().length()*5,485);
             
-            g.drawImage(Player.getImages().get(me.getCharacter()),150,510,60,60, this);
-            g.drawImage(Player.getImages().get(enemy.getCharacter()),width-250,510,60,60, this);
+            g.drawImage(PlayerOld.getImages().get(me.getCharacter()),150,510,60,60, this);
+            g.drawImage(PlayerOld.getImages().get(enemy.getCharacter()),width-250,510,60,60, this);
             
             for(int i=0;i<me.getLives();i++){
                 g.drawImage(life, 150+15*i, 485, this);
@@ -834,8 +834,8 @@ public class GameEngine extends AnimationPanel {
             g.drawString(enemy.getPlayerName(),180-enemy.getPlayerName().length()*5,485);
             g.drawString(me.getPlayerName(),width-220-me.getPlayerName().length()*5,485);
             
-            g.drawImage(Player.getImages().get(enemy.getCharacter()),150,510,60,60, this);
-            g.drawImage(Player.getImages().get(me.getCharacter()),width-250,510,60,60, this);
+            g.drawImage(PlayerOld.getImages().get(enemy.getCharacter()),150,510,60,60, this);
+            g.drawImage(PlayerOld.getImages().get(me.getCharacter()),width-250,510,60,60, this);
             
             for(int i=0;i<enemy.getLives();i++){
                 g.drawImage(life, 150+15*i, 485, this);
@@ -1022,11 +1022,11 @@ public class GameEngine extends AnimationPanel {
                 
                 while(true){
                     pingClock.sendPing();
-                    Player.unPack(dataIn.readUTF(), enemy, me);
+                    PlayerOld.unPack(dataIn.readUTF(), enemy, me);
                     unPackGameInfo(dataIn.readUTF());
                     
-                    ArrayList<String> tempPList = (ArrayList<String>)dataIn.readObject();
-                    enemyPList = Projectile.unPackArray(tempPList);
+//                    ArrayList<String> tempPList = (ArrayList<String>)dataIn.readObject();
+//                    enemyPList = Projectile.unPackArray(tempPList);
                     
                     enemyReadyInGame = dataIn.readBoolean();
                     enemyPlayAgain = dataIn.readBoolean();
@@ -1035,7 +1035,7 @@ public class GameEngine extends AnimationPanel {
                     readyToPlay = dataIn.readBoolean();
                 }
                 
-            }catch(IOException | ClassNotFoundException  ex){
+            }catch(IOException ex){
                 ex.printStackTrace();
             }
         }
@@ -1059,7 +1059,7 @@ public class GameEngine extends AnimationPanel {
             try{
                 
                 while(true){                    
-                    dataOut.writeUTF(Player.pack(me));
+                    dataOut.writeUTF(PlayerOld.pack(me));
                     dataOut.writeUTF(packGameInfo());
                     
                     dataOut.writeObject(Projectile.packArray(myPList));
@@ -1171,7 +1171,7 @@ public class GameEngine extends AnimationPanel {
         ArrayList<Rectangle> imageRectList = new ArrayList<>();
         
         int imageSize = 92;
-        for(int i=0; i<Player.getImages().size()-1;i+=1){
+        for(int i = 0; i< PlayerOld.getImages().size()-1; i+=1){
             int imageX = 10+(i%5)*(imageSize+10)-5;
             int imageY = 100-5+((int)(imageSize*1.5/2)+10)*(i/5);
             int imageWidth = imageSize+10;
@@ -1198,11 +1198,11 @@ public class GameEngine extends AnimationPanel {
         g2d.setColor(Color.BLACK);
         
         if(playerID == 1){
-            g2d.drawString(Player.getCharacterNames().get(me.getCharacter()),100,450);
-            g2d.drawString(Player.getCharacterNames().get(enemy.getCharacter()), 650,450);
+            g2d.drawString(PlayerOld.getCharacterNames().get(me.getCharacter()),100,450);
+            g2d.drawString(PlayerOld.getCharacterNames().get(enemy.getCharacter()), 650,450);
         } else if(playerID == 2) {
-            g2d.drawString(Player.getCharacterNames().get(enemy.getCharacter()),100,450);
-            g2d.drawString(Player.getCharacterNames().get(me.getCharacter()), 650,450);
+            g2d.drawString(PlayerOld.getCharacterNames().get(enemy.getCharacter()),100,450);
+            g2d.drawString(PlayerOld.getCharacterNames().get(me.getCharacter()), 650,450);
         }
     }
     public void handleMouseMovementsInCharacterSelect(){
@@ -1210,7 +1210,7 @@ public class GameEngine extends AnimationPanel {
         ArrayList<Rectangle> imageRectList = new ArrayList<>();        
         
         int imageSize = 92;
-        for(int i=0; i<Player.getImages().size()-1;i+=1){
+        for(int i = 0; i< PlayerOld.getImages().size()-1; i+=1){
             int imageX = 10+(i%5)*(imageSize+10);
             int imageY = 100+((int)(imageSize*1.5/2)+10)*(i/5);
             int imageHeight = (int)(imageSize*1.5/2);
@@ -1259,28 +1259,28 @@ public class GameEngine extends AnimationPanel {
                 me.doJAttack();
                 jAttackTimer = 0.25;
                 jAnimationTimer = 0.25;
-                if(me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.EMI)
+                if(me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.EMI)
                     jAttackTimer = 0.5;
-                if(me.getCharacter() == Player.OBAMA)
+                if(me.getCharacter() == PlayerOld.OBAMA)
                     jAttackTimer = 1;
             }
             if((c=='k'||c=='K') && kAttackTimer == 0){
                 me.doKAttack();
                 kAttackTimer = 1.25;
                 kAnimationTimer = .25;
-                if(me.getCharacter() == Player.ADAM || me.getCharacter() == Player.EMI)
+                if(me.getCharacter() == PlayerOld.ADAM || me.getCharacter() == PlayerOld.EMI)
                     kAttackTimer = 5.0;
-                if(me.getCharacter() == Player.SALOME)
+                if(me.getCharacter() == PlayerOld.SALOME)
                     kAttackTimer = .25;
-                if(me.getCharacter() == Player.KAUSHAL)
+                if(me.getCharacter() == PlayerOld.KAUSHAL)
                     kAttackTimer  = .75;
-                if(me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.LAWRENCE){
+                if(me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.LAWRENCE){
                     kAttackTimer = 8.0;
                     kAnimationTimer = .6;
                 }
-                if(me.getCharacter() == Player.LISON)
+                if(me.getCharacter() == PlayerOld.LISON)
                     kAttackTimer = 3.0;
-                if(me.getCharacter() == Player.OBAMA){
+                if(me.getCharacter() == PlayerOld.OBAMA){
                     kAttackTimer = .3;
                     kAnimationTimer = .4;
                 }
@@ -1387,16 +1387,16 @@ public class GameEngine extends AnimationPanel {
     
     public void initGraphics() {      
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Player.initImages();
+        PlayerOld.initImages();
         Rocket.initImage();
         Lightning.initImages();
         GrowingLAttack.initImage();
         Motorcycle.initImages();
         Stick.initImages();
-        Projectile.initImage();
+        Projectile.initImages();
         MapHandler.initImages(toolkit);
-        RainingCode.initImage(toolkit);
-        Boomerang.initImages(toolkit);
+        //RainingCode.initImage(toolkit);
+        //Boomerang.initImages(toolkit);
         
         introScreen = toolkit.getImage("SSMImages/introScreen.png");
         inGameBG = toolkit.getImage("SSMImages/Maps/background_1.png");
