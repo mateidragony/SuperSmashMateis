@@ -22,11 +22,18 @@ public class Drawer {
     private int serverScreenNumber;
     private Point mouse;
 
-    private double testPrintTimer;
+    //Map select variables
+    private final MapHandler myMapHandler;
+    private int mapNumber;
+
+    //Images
+    private Image inGameBG;
 
     public Drawer(int playerID, int playerMode){
         this.playerID = playerID;
         this.playerMode = playerMode;
+        myMapHandler = new MapHandler();
+        myMapHandler.initImages(new Poolkit());
 
         players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
     }
@@ -36,6 +43,10 @@ public class Drawer {
 
         if (serverScreenNumber == Animator.CHARACTER_SELECT_SCREEN)
             drawCharacterSelect(g, io);
+        else if(serverScreenNumber == Animator.MAP_SELECT)
+            drawMapSelect(g,io);
+        else if(serverScreenNumber == Animator.IN_GAME_SCREEN)
+            drawInGame(g,io);
     }
 
     //for drawing imgs in character select
@@ -98,7 +109,19 @@ public class Drawer {
                     x+15,(height-39)-120+10,120,100,io);
         }
     }
+    public void drawMapSelect(Graphics g, ImageObserver io){
+        //draw bg color
+        g.setColor(Color.black);
+        g.fillRect(0,0,width,height);
 
+        myMapHandler.drawMouseEvents(mouse.x, mouse.y, g,io);
+        myMapHandler.drawMapScreen(g,io);
+        inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+    }
+    public void drawInGame(Graphics g, ImageObserver io){
+        inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+        g.drawImage(inGameBG,0,0,width,height,io);
+    }
 
 
 
@@ -129,6 +152,7 @@ public class Drawer {
 
         String[] gameData = data[0].split(SSMClient.parseChar);
         serverScreenNumber = Integer.parseInt(gameData[0]);
+        mapNumber = Integer.parseInt(gameData[1]);
 
         for(int i=1;i<data.length-1;i++){
             if(data[i].equals("null"))
@@ -136,15 +160,6 @@ public class Drawer {
             else
                 players.set(i-1,Player.unPack(data[i]));
         }
-
-//        if(testPrintTimer < 0){
-//            testPrintTimer = 100;
-//            System.out.println("String: "+data[1]);
-//            System.out.println("Player: "+Player.unPack(data[1]).pack());
-//            System.out.println("Player from list: "+players.get(0).pack());
-//            System.out.println();
-//        } else
-//            testPrintTimer -=1.0/60;
 
     }
 

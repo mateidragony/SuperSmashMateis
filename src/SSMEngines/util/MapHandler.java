@@ -3,12 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package SSMCode;
+package SSMEngines.util;
 
 /**
  *
  * @author 22cloteauxm
  */
+
+import SSMCode.Platform;
 
 import java.util.ArrayList;
 import java.awt.*;
@@ -35,9 +37,9 @@ public class MapHandler {
     
     public void drawMapScreen(Graphics g, ImageObserver io){
         int imageSize = 150;
-        for(int i=0; i<mapThumbnails.size();i+=1){
-            g.drawImage(mapThumbnails.get(i),(int)(10+(i%2)*(imageSize*1.6+10)+550),10+((int)(imageSize)+10)*(i/2)
-                    ,(int)(imageSize*1.6),(int)(imageSize),io);
+        for(int i=0; i<mapThumbnails.size();i++){
+            g.drawImage(mapThumbnails.get(i),(int)(10+(i%2)*(imageSize*1.6+10)+550),10+((imageSize)+10)*(i/2)
+                    ,(int)(imageSize*1.6),(imageSize),io);
         }
         
         g.setFont(new Font("Sans Serif", Font.BOLD, 60));
@@ -48,7 +50,7 @@ public class MapHandler {
         ArrayList<Rectangle> imageRectList = new ArrayList<>();
         
         int imageSize = 150;
-        for(int i=0; i<mapThumbnails.size();i+=1){
+        for(int i=0; i<mapThumbnails.size();i++){
             imageRectList.add(new Rectangle((int)(10+(i%2)*(imageSize*1.6+10)-5),
                     10-5+((int)(imageSize)+10)*(i/2),
                     (int)(imageSize*1.6+10),(int)(imageSize)+10));
@@ -78,8 +80,8 @@ public class MapHandler {
         int imageSize = 150;
         for(int i=0; i<mapThumbnails.size();i+=1){
             imageRectList.add(new Rectangle((int)(10+(i%2)*(imageSize*1.6+10)-5),
-                    10-5+((int)(imageSize)+10)*(i/2),
-                    (int)(imageSize*1.6+10),(int)(imageSize)+10));
+                    10-5+((imageSize)+10)*(i/2),
+                    (int)(imageSize*1.6+10),(imageSize)+10));
         }
         for(Rectangle r: imageRectList){
             r.x+=550;
@@ -137,7 +139,7 @@ public class MapHandler {
         return platList;
     }
     
-    public static void initImages(Toolkit toolkit){
+    public void initImages(Poolkit toolkit){
         mapThumbnails = new ArrayList<>();
         mapThumbnails.add(toolkit.getImage("SSMImages/Maps/map_1_TN.png"));
         mapThumbnails.add(toolkit.getImage("SSMImages/Maps/map_2_TN.png"));

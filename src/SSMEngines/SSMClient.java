@@ -3,6 +3,8 @@ package SSMEngines;
 import SSMCode.Player;
 import SSMEngines.util.Animator;
 import SSMEngines.util.Drawer;
+import SSMEngines.util.MapHandler;
+import SSMEngines.util.Poolkit;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -31,7 +33,7 @@ public class SSMClient extends AnimationPanel{
         drawer = new Drawer(playerID,playerMode);
         connecting = "to Connect ";
 
-        screenNumber = Animator.CHARACTER_SELECT_SCREEN;
+        screenNumber = Animator.INTRO_SCREEN;
     }
 
 
@@ -128,7 +130,9 @@ public class SSMClient extends AnimationPanel{
             while(true){
                 try {
                     allConnected = dataIn.readBoolean();
-                    drawer.unpack(dataIn.readUTF());
+                    String str = dataIn.readUTF();
+                    if(drawer != null)
+                        drawer.unpack(str);
                 } catch(IOException e){
                     e.printStackTrace();
                 }
@@ -308,6 +312,8 @@ public class SSMClient extends AnimationPanel{
     private Image introScreen;
 
     public void initGraphics(){
+        Poolkit poolkit = new Poolkit();
+
         Player.initImages();
 
         try {

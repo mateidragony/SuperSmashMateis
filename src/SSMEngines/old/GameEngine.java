@@ -14,6 +14,7 @@ import java.awt.event.MouseEvent;
 import javax.sound.sampled.Clip;
 import SSMCode.*;
 import SSMEngines.SSMLauncher;
+import SSMEngines.util.MapHandler;
 
 import java.net.*;
 import java.io.*;
@@ -1394,7 +1395,7 @@ public class GameEngine extends AnimationPanel {
         Motorcycle.initImages();
         Stick.initImages();
         Projectile.initImages();
-        MapHandler.initImages(toolkit);
+        //MapHandler.initImages(toolkit);
         //RainingCode.initImage(toolkit);
         //Boomerang.initImages(toolkit);
         

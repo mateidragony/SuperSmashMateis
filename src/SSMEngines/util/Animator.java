@@ -1,6 +1,6 @@
 package SSMEngines.util;
 
-import SSMCode.MapHandler;
+import SSMCode.Platform;
 import SSMCode.Player;
 import SSMEngines.SSMClient;
 
@@ -52,15 +52,22 @@ public class Animator {
     private List<Boolean> playAgain;
     private boolean disconnected;
 
-    private MapHandler mapHandler;
-
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
     private List<Point> mouseCoords;
     private List<Boolean> clicks;
 
+    //map screen variables
+    private int mapNumber;
+    private final MapHandler mapHandler;
+    private boolean choseMap;
+
+    //in game variables
+    private List<Platform> platList;
+
     public Animator(){
         screenNumber = CHARACTER_SELECT_SCREEN;
+        mapHandler = new MapHandler();
         initArrayLists();
         Player.initImages();
     }
@@ -90,9 +97,27 @@ public class Animator {
     public void animateCharacterSelect(){
         //if a player clicks on an image they become that character
         handleMouseEventsCharacterSelect();
+        for(List<Boolean> list : playerMoves){
+            if(!list.isEmpty() && list.get(J))
+                screenNumber++;
+        }
     }
     public void animateMapSelect(){
+        for(int i=0; i< clicks.size(); i++){
+            boolean click = clicks.get(i);
 
+            if(click){
+                choseMap = mapHandler.handleMouseEvents(mouseCoords.get(i).x, mouseCoords.get(i).y);
+            }
+        }
+
+        if(choseMap){
+            mapNumber = mapHandler.getMapNumber();
+            Platform.setBigImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber()*2));
+            Platform.setSmallImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber()*2+1));
+            platList = mapHandler.initPlats();
+            screenNumber++;
+        }
     }
     public void animateGame(){
 
@@ -136,6 +161,7 @@ public class Animator {
         String data = "";
         //Game data
         data+=screenNumber+SSMClient.parseChar;
+        data+=mapNumber+SSMClient.parseChar;
 
         data+= parseChar;
 

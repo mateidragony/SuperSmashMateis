@@ -43,9 +43,32 @@ public class SSMRunner {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch(Exception ex){ ex.printStackTrace(); }
 
-//        Thread player2 = new Thread(SSMRunner::new);
+//        Thread player2 = new Thread(() -> {
+//            try {
+//                new SSMRunner();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
 //        player2.start();
+//        Thread player3 = new Thread(() -> {
+//            try {
+//                new SSMRunner();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        player3.start();
+//        Thread player4 = new Thread(() -> {
+//            try {
+//                new SSMRunner();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        player4.start();
 
         new SSMRunner();
+
     }
 }
