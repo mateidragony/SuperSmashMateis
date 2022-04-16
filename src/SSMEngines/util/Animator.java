@@ -2,6 +2,7 @@ package SSMEngines.util;
 
 import SSMCode.Platform;
 import SSMCode.Player;
+import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
 
 import java.awt.*;
@@ -19,6 +20,8 @@ public class Animator {
     //------------------------------------------------------------
     //Constants
     //------------------------------------------------------------
+    private final int width = AnimationPanel.width, height = AnimationPanel.height;
+
     public static final int INTRO_SCREEN = 0;
     public static final int LOADING_SCREEN = 1;
     public static final int CHARACTER_SELECT_SCREEN = 2;
@@ -38,6 +41,7 @@ public class Animator {
     //Instance Bariables
     //------------------------------------------------------------
 
+    private final int numPlayers;
     private int screenNumber;
     private List<Player> players;
 
@@ -47,8 +51,7 @@ public class Animator {
     private List<Double> animationTimers;
     private List<Double> gameTimers;
 
-    private List<Boolean> readyToPlay;
-    private List<Boolean> readyToPlayGame;
+    private List<Boolean> characterSelected; //booleans for character select
     private List<Boolean> playAgain;
     private boolean disconnected;
 
@@ -65,9 +68,10 @@ public class Animator {
     //in game variables
     private List<Platform> platList;
 
-    public Animator(){
+    public Animator(int maxPlayers){
         screenNumber = CHARACTER_SELECT_SCREEN;
         mapHandler = new MapHandler();
+        numPlayers = maxPlayers;
         initArrayLists();
         Player.initImages();
     }
@@ -79,8 +83,9 @@ public class Animator {
         playerMoves = Stream.generate(ArrayList<Boolean>::new).limit(4).collect(Collectors.toList());
         //4 points at 0,0
         mouseCoords = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
-        //3 false booleans
+        //4 false booleans
         clicks = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        characterSelected = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
     }
 
 
@@ -97,10 +102,17 @@ public class Animator {
     public void animateCharacterSelect(){
         //if a player clicks on an image they become that character
         handleMouseEventsCharacterSelect();
-        for(List<Boolean> list : playerMoves){
-            if(!list.isEmpty() && list.get(J))
-                screenNumber++;
+        //if a player presses ready button, and they selected a character, they are ready
+        for(int i=0; i<mouseCoords.size(); i++){
+            Point mouse = mouseCoords.get(i);
+            if(new Rectangle((width-16)/2-205 - 5,415 - 5,410 + 10,50 + 10).contains(mouse)
+                    && clicks.get(i) && players.get(i).getCharacter() != Player.DUMMY){
+                characterSelected.set(i,true);
+            }
         }
+        //if all players are ready, go to map select
+        if(!characterSelected.subList(0,numPlayers).contains(false))
+            screenNumber++;
     }
     public void animateMapSelect(){
         for(int i=0; i< clicks.size(); i++){
@@ -126,7 +138,7 @@ public class Animator {
 
     int imageSize = 90; double imgHeightRatio = 1.5/1.3;
     int imgsPerRow = 9; int imgOffset = 10;
-    int xOffset = 100; int yOffset = 100;
+    int xOffset = 100; int yOffset = 50;
 
     public void handleMouseEventsCharacterSelect(){
         ArrayList<Rectangle> imageRects = new ArrayList<>();
@@ -142,7 +154,7 @@ public class Animator {
         for(int i=0; i<mouseCoords.size();i++) {
             Point mouse = mouseCoords.get(i);
 
-            if(clicks.get(i)) {
+            if(clicks.get(i) && !characterSelected.get(i)) {
                 for (int j = 0; j < imageRects.size(); j++) {
                     Rectangle r = imageRects.get(j);
                     if (r.contains(mouse)) {
@@ -160,8 +172,12 @@ public class Animator {
     public String pack(){
         String data = "";
         //Game data
-        data+=screenNumber+SSMClient.parseChar;
-        data+=mapNumber+SSMClient.parseChar;
+        data+= screenNumber + SSMClient.parseChar; //0
+        data+= mapNumber + SSMClient.parseChar; //1
+        data+= characterSelected.get(0) + SSMClient.parseChar; //2
+        data+= characterSelected.get(1) + SSMClient.parseChar; //3
+        data+= characterSelected.get(2) + SSMClient.parseChar; //4
+        data+= characterSelected.get(3) + SSMClient.parseChar; //5
 
         data+= parseChar;
 

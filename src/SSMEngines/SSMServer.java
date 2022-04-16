@@ -24,7 +24,7 @@ public class SSMServer {
 
     //    ss.setReceiveBufferSize(2000);
         //ss.setReceiveBufferSize(2000);
-        animator = new Animator();
+        animator = new Animator(maxPlayers);
 
         int port = 80;
         System.out.println("The port is: "+port);

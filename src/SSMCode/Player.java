@@ -69,6 +69,7 @@ public class Player extends Actor{
     private int direction;
     private int character;
     private int lives;
+    private int stunner;
     private double stunDuration, stunDrawTimer, confusionDuration, flameDuration, flameDrawTimer;
 
     private boolean taunting;
@@ -87,14 +88,14 @@ public class Player extends Actor{
         super(x,y,w,h);
 
         this.playerID = playerID;
-        character = 0;
+        character = DUMMY;
         myImageIndex = 1;
 
         initializeAttacks();
 
         lives = 3;
 
-        playerName = "Dummy";
+        playerName = "UmerMain123";
 
         switch(playerID){
             case(0) -> {team = "red"; color = Color.red;}
@@ -114,7 +115,7 @@ public class Player extends Actor{
 
         lives = 3;
 
-        playerName = "Dummy";
+        playerName = "UmerMain123";
 
         switch(playerID){
             case(0) -> {team = "red"; color = Color.red;}
@@ -182,6 +183,7 @@ public class Player extends Actor{
     public double getConfusionDuration(){return confusionDuration;}
     public double getLAttackTimer(){return lAttackTimer;}
     public double getNadoTimer(){return nadoTimer;}
+    public Color getColor(){return color;}
 
     public boolean isBoss(){return isBoss;}
     public boolean isTaunting(){return taunting;}
@@ -214,6 +216,7 @@ public class Player extends Actor{
     public void setMyImageIndex(int c){myImageIndex = c;}
     public void setChargingLAttackStrength(double c){chargingLAttackStrength = c;}
     public void setNadoTimer(double c){nadoTimer = c;}
+    public void setStunner(int c){stunner = c;}
 
     //--------------------------------------------
     //Initializing Methods
@@ -262,6 +265,7 @@ public class Player extends Actor{
         myNames.add("Emi");
         myNames.add("Lawrence");
         myNames.add("Neel");
+        myNames.add("Dummy");
 
         Punch.initImages();
 
@@ -280,6 +284,7 @@ public class Player extends Actor{
         myImages.add(toolkit.getImage("SSMImages/Dummy.png"));
 
         for(String name: myNames){
+            if(!name.equals("Dummy"))
             myInGameImageLists.add(initPlayerImages(toolkit,name));
         }
 
@@ -331,7 +336,7 @@ public class Player extends Actor{
     //--------------------------------------------
     //Methods
     //--------------------------------------------
-    public void draw(Graphics g, ImageObserver io, int playerID, PlayerOld enemy){
+    public void draw(Graphics g, ImageObserver io, int playerID){
 
         int[] triangle1XPoints = {20,50,50};
         int[] triangle2XPoints = {1070,1040,1040};
@@ -364,7 +369,7 @@ public class Player extends Actor{
 
         //g.drawRect((int)getX(),(int)getY(),getW(),getH());
         g.setFont(new Font("Sans Serif", Font.BOLD, 18));
-        g.drawString(playerName, (int)getX()+(int)getW()/2-playerName.length()*5,(int)getY()-10);
+        g.drawString(playerName, (int)getX()+getW()/2-playerName.length()*5,(int)getY()-10);
 
         if(taunting){
             g.setFont(new Font("Sans Serif", Font.BOLD, 20));
@@ -381,7 +386,7 @@ public class Player extends Actor{
             else
                 stunDrawTimer = .7;
 
-            if(enemy.getCharacter() == PlayerOld.LISON || enemy.getCharacter() == PlayerOld.NEEL){
+            if(stunner == PlayerOld.LISON || stunner == PlayerOld.NEEL){
                 g.drawImage(miscImages.get(3), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
             }
             else{
@@ -909,6 +914,7 @@ public class Player extends Actor{
         packedPlayersInfo += getLAttackTimer() + SSMClient.parseChar; //16
         packedPlayersInfo += getFlameDuration() + SSMClient.parseChar; //17
         packedPlayersInfo += chargingLAttackStrength + SSMClient.parseChar; //18
+        packedPlayersInfo += stunner + SSMClient.parseChar; //19
 
         //        packedPlayersInfo += parseChar;
 //
@@ -946,6 +952,7 @@ public class Player extends Actor{
         player.setLAttackTimer(Double.parseDouble(data[16]));
         player.setFlameDuration(Double.parseDouble(data[17]));
         player.setChargingLAttackStrength(Double.parseDouble(data[18]));
+        player.setStunner(Integer.parseInt(data[19]));
 
         return player;
     }

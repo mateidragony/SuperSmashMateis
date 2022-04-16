@@ -53,22 +53,22 @@ public class SSMClient extends AnimationPanel{
             g.setColor(Color.black);
             g.fillRect(0, 0, width, height);
             g.setColor(Color.white);
-            g.setFont(new Font("Sans Serif", Font.BOLD, 60));
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 60));
 
             //if not all players are connected, write waiting for players
             if(!allConnected){
-                g.drawString("Waiting for Player(s)", 150, 150);
+                g.drawString("Waiting for Player(s)", 70, 150);
 
-                if(frameNumber%60==0)
+                if(frameNumber%30==0)
                     connecting+=".";
-                if(frameNumber%240==0)
-                    connecting = "to Connect ";
+                if(frameNumber%120==0)
+                    connecting = "to Connect";
 
                 g.drawString(connecting, 200, 250);
             }
             else {
-                g.drawString("All Players Have Connected", 150, 150);
-                g.drawString("Press Enter to Start", 150, 250);
+                g.drawString("All Players Have Connected", 70, 150);
+                g.drawString("Press Enter to Start", 70, 250);
 
                 if(enter)
                     screenNumber++;
@@ -220,7 +220,7 @@ public class SSMClient extends AnimationPanel{
         }
 
         playerMode = launcher.getPlayerMode();
-        playerName = launcher.getPlayerName();
+        playerName = launcher.getPlayerName().equals("Enter Player Name") ? "UmerMain123" : launcher.getPlayerName();
         ipAddress =  launcher.getIP();
 
         if(launcher.hostServer()){
@@ -315,6 +315,7 @@ public class SSMClient extends AnimationPanel{
         Poolkit poolkit = new Poolkit();
 
         Player.initImages();
+        Drawer.initImages(poolkit);
 
         try {
             introScreen = ImageIO.read(new File("SSMImages/introScreen.png"));
