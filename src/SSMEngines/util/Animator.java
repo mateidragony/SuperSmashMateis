@@ -1,7 +1,9 @@
 package SSMEngines.util;
 
+import SSMCode.Actor;
 import SSMCode.Platform;
 import SSMCode.Player;
+import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
 
@@ -41,32 +43,43 @@ public class Animator {
     //Instance Bariables
     //------------------------------------------------------------
 
+    private int frameNumber;
     private final int numPlayers;
     private int screenNumber;
-    private List<Player> players;
+    private String bossCode = "Zbogck";
 
-    private List<Double> deathInfo;
+    //timers
+    private List<Double> deathTimer; //timer for the blast lines
     private List<Double> respawnTimers;
-    private List<Double> attackTimers;
-    private List<Double> animationTimers;
-    private List<Double> gameTimers;
+    private List<List<Double>> attackAnimationTimers;//J=0, K=1, L=2
+    private List<List<Double>> playerTimers;//J=0, K=1, Walking=2 (J and K are attack cooldowns)
+    private double gameTimer, startGameTimer;
 
-    private List<Boolean> characterSelected; //booleans for character select
-    private List<Boolean> playAgain;
-    private boolean disconnected;
+    //in game variables
+    private List<Player> players;
+    private List<Platform> platList;
+    private List<Point> deathPoints;
+    private List<Integer> timesJumped;
+    private List<Boolean> chargingL;
+    private List<Boolean> releaseL;
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
     private List<Point> mouseCoords;
     private List<Boolean> clicks;
 
+    //character select variables
+    private List<Boolean> characterSelected;
+
     //map screen variables
+    private int frameEnteredMapSelect;
     private int mapNumber;
     private final MapHandler mapHandler;
     private boolean choseMap;
 
-    //in game variables
-    private List<Platform> platList;
+    //dc and end screen variables
+    private List<Boolean> playAgain;
+    private boolean disconnected;
 
     public Animator(int maxPlayers){
         screenNumber = CHARACTER_SELECT_SCREEN;
@@ -77,20 +90,29 @@ public class Animator {
     }
 
     public void initArrayLists(){
-        //List of 4 dummies at (0,0) size (40,60) id 0->3
+        //Sent from client
         players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
-        //4 blank arraylists
         playerMoves = Stream.generate(ArrayList<Boolean>::new).limit(4).collect(Collectors.toList());
-        //4 points at 0,0
-        mouseCoords = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
-        //4 false booleans
+        mouseCoords = Stream.generate(() -> new Point(-100,-100)).limit(4).collect(Collectors.toList());
         clicks = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        //character select and end screen
         characterSelected = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        playAgain = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        //timers
+        deathTimer = Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList());
+        respawnTimers = Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList());
+        attackAnimationTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
+        playerTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
+        //in game
+        deathPoints = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
+        timesJumped = Stream.generate(()->0).limit(4).collect(Collectors.toList());
+        chargingL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());;
+        releaseL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());;
     }
 
-
-
     public void animate(){
+        frameNumber++;
+
         if(screenNumber == CHARACTER_SELECT_SCREEN)
             animateCharacterSelect();
         else if(screenNumber == MAP_SELECT)
@@ -111,27 +133,89 @@ public class Animator {
             }
         }
         //if all players are ready, go to map select
-        if(!characterSelected.subList(0,numPlayers).contains(false))
+        if(!characterSelected.subList(0,numPlayers).contains(false)) {
             screenNumber++;
+            frameEnteredMapSelect = frameNumber;
+        }
     }
     public void animateMapSelect(){
-        for(int i=0; i< clicks.size(); i++){
-            boolean click = clicks.get(i);
-
-            if(click){
-                choseMap = mapHandler.handleMouseEvents(mouseCoords.get(i).x, mouseCoords.get(i).y);
+        //to fix bug where if you click the ready button it also thinks you clicked a map
+        if(frameNumber-frameEnteredMapSelect > 10) {
+            //checks to see if any player clicked on a map
+            for (int i = 0; i < clicks.size(); i++) {
+                boolean click = clicks.get(i);
+                if (click) {
+                    choseMap = mapHandler.handleMouseEvents(mouseCoords.get(i).x, mouseCoords.get(i).y);
+                }
             }
-        }
-
-        if(choseMap){
-            mapNumber = mapHandler.getMapNumber();
-            Platform.setBigImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber()*2));
-            Platform.setSmallImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber()*2+1));
-            platList = mapHandler.initPlats();
-            screenNumber++;
+            //if a map has been chosen, set the map to that, and go into in game
+            if (choseMap) {
+                mapNumber = mapHandler.getMapNumber();
+                Platform.setBigImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber() * 2));
+                Platform.setSmallImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber() * 2 + 1));
+                platList = mapHandler.initPlats();
+                screenNumber++;
+            }
         }
     }
     public void animateGame(){
+        //increment the game time
+        gameTimer += 1.0/60;
+        //if any player has 0 lives they can't play anymore
+        int numPlayersDead = 0;
+        for(Player p : players){
+            if(p.getLives() <= 0){
+                p.setX(-1000); p.setY(-1000);
+                p.setConfusionDuration(10000);
+                numPlayersDead++;
+            }
+        }
+        //if only one player is alive, end game
+        if(numPlayersDead >= numPlayers-1)
+            screenNumber++;
+        //if a player lands on ground, reset their jumps
+        for(int i=0; i<players.size(); i++){
+            if(players.get(i).isOnGround())
+                timesJumped.set(i,0);
+        }
+        //animate the platforms
+        for(Platform plat : platList)
+            plat.animate(players);
+        //handle L attacks
+        for(int i=0; i<players.size(); i++){
+            Player p = players.get(i);
+            //If player is at max L charge, release L
+            if(p.getChargingLAttackStrength() > Player.MAX_L)
+                releaseL.set(i,true);
+            //if charging, make player charge L
+            if(chargingL.get(i))
+                p.chargeLAttack();
+            //If release L, release it and set animation timer
+            if(releaseL.get(i)){
+                chargingL.set(i,false);
+                p.releaseLAttack();
+                releaseL.set(i,false);
+                attackAnimationTimers.get(2).set(i,0.25);
+            }
+        }
+        //animate the players
+        for(int i=0; i<players.size(); i++) {
+            Player p = players.get(i);
+
+            handlePlayerMovement(p,i);
+            handleGravity(p);
+            p.animate(players);
+            
+            handleWalkingAnimation(p,i);
+            handlePlayerImages(p,i);
+            handleDeath(p,i);
+            handleAttackTimers(p,i);
+        }
+
+        if(startGameTimer > 0)
+            startGameTimer -= 1.0/80;
+        else
+            startGameTimer = 0;
 
     }
 
@@ -166,6 +250,208 @@ public class Animator {
     }
 
 
+    /**
+     * In game methods
+     */
+    public void handlePlayerMovement(Player me, int index){
+        //Movement only if you pressed the button to move, you're not on motorcycle
+        //you're not dashing, and you aren't exceeding speed limit
+        if(playerMoves.get(index).get(LEFT) && me.getMoto() == null
+                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7)
+            me.setXVel(-5);
+        if(playerMoves.get(index).get(RIGHT) && me.getMoto() == null
+                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7)
+            me.setXVel(5);
+
+        //boss movement
+        if(me.isBoss() && playerMoves.get(index).get(UP))
+            me.setYVel(-7);
+        if(me.isBoss() && playerMoves.get(index).get(DOWN))
+            me.setYVel(7);
+        if(me.isBoss() && playerMoves.get(index).get(LEFT))
+            me.setXVel(-7);
+        if(me.isBoss() && playerMoves.get(index).get(RIGHT))
+            me.setXVel(7);
+    }
+    public void handleGravity(Player me){
+        //check if an enemy is boss
+        boolean bossMode = false;
+        for(Player p : players){
+            if(!p.equals(me) && p.isBoss()){
+                bossMode = true;
+                break;
+            }
+        }
+        //if an enemy is the boss, slow everything down
+        if(bossMode){
+            Actor.GRAVITY = 0.1;
+            if(me.getXVel() > 1.7 || me.getXVel() < -1.7)
+                me.setXVel(me.getXVel()/3);
+        }
+        //if you're on moon, low gravity
+        else if(mapNumber == 3)
+            Actor.GRAVITY = 0.3;
+        //regular gravity
+        else
+            Actor.GRAVITY = 0.5;
+    }
+    public void handleWalkingAnimation(Player me, int index){
+        //Incrementing timer
+        if(playerTimers.get(index).get(2) > 0)
+            playerTimers.get(index).set(2, playerTimers.get(index).get(2)-1.0/60);
+        else
+            playerTimers.get(index).set(2,0.4);
+
+        //Switching from running 1 and running 2 to animate
+        if(playerTimers.get(index).get(2) > 0.2 && me.getDirection() == Projectile.RIGHT)
+            me.setMyImageIndex(Player.RUNNING_FORWARD1);
+        else if(playerTimers.get(index).get(2) > 0.2 && me.getDirection() == Projectile.LEFT)
+            me.setMyImageIndex(Player.RUNNING_BACKWARD1);
+        if(playerTimers.get(index).get(2) < 0.2 && me.getDirection() == Projectile.RIGHT)
+            me.setMyImageIndex(Player.RUNNING_FORWARD2);
+        else if(playerTimers.get(index).get(2) < 0.2 && me.getDirection() == Projectile.LEFT)
+            me.setMyImageIndex(Player.RUNNING_BACKWARD2);
+
+    }
+    public void handlePlayerImages(Player me, int index) {
+        if (me.getDirection() == Projectile.RIGHT) {
+            //if l attacking; or l animating, and I'm not Matei; or I'm spock and lasering; or I'm emi and lasering
+            if (me.isLAttacking() || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
+                    || (me.getCharacter() == Player.SPOCK && me.getPunch() != null)
+                    || (me.getCharacter() == Player.EMI && me.getPunch() != null && me.getPunch().getW() >= 1000)) {
+                me.setMyImageIndex(Player.L_ATTACK_FORWARD);
+            } 
+            //if im charging L
+            else if (me.chargingL()) {
+                me.setMyImageIndex(Player.CHARGE_L_ATTACK_FORWARD);
+            } 
+            //If I'm k attacking
+            else if (me.getVPunch() != null || me.getLightning() != null || me.getMoto() != null || me.isHealing()) {
+                me.setMyImageIndex(Player.K_ATTACK_FORWARD);
+            } 
+            //If I'm not umer and k attacking
+            else if (me.getCharacter() != Player.UMER && attackAnimationTimers.get(index).get(1) > 0) {
+                me.setMyImageIndex(Player.K_ATTACK_FORWARD);
+            } 
+            //if I'm regular punching
+            else if (me.getPunch() != null && me.getCharacter() != Player.SPOCK) {
+                me.setMyImageIndex(Player.J_ATTACK_FORWARD);
+            } 
+            //If I'm not umer and animating J
+            else if (me.getCharacter() != Player.UMER && attackAnimationTimers.get(index).get(0) > 0) {
+                me.setMyImageIndex(Player.J_ATTACK_FORWARD);
+            }
+            //If I'm not moving
+            else if (me.getXVel() == 0) {
+                me.setMyImageIndex(Player.STANDING_FORWARD);
+            }
+        } else {
+            //if l attacking; or l animating, and I'm not Matei; or I'm spock and lasering; or I'm emi and lasering
+            if (me.isLAttacking() || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
+                    || (me.getCharacter() == Player.SPOCK && me.getPunch() != null)
+                    || (me.getCharacter() == Player.EMI && me.getPunch() != null && me.getPunch().getW() >= 1000)) {
+                me.setMyImageIndex(Player.L_ATTACK_BACKWARD);
+            }
+            //if im charging L
+            else if (me.chargingL()) {
+                me.setMyImageIndex(Player.CHARGE_L_ATTACK_BACKWARD);
+            }
+            //If I'm k attacking
+            else if (me.getVPunch() != null || me.getLightning() != null || me.getMoto() != null || me.isHealing()) {
+                me.setMyImageIndex(Player.K_ATTACK_BACKWARD);
+            }
+            //If I'm not umer and k attacking
+            else if (me.getCharacter() != Player.UMER && attackAnimationTimers.get(index).get(1) > 0) {
+                me.setMyImageIndex(Player.K_ATTACK_BACKWARD);
+            }
+            //if I'm regular punching
+            else if (me.getPunch() != null && me.getCharacter() != Player.SPOCK) {
+                me.setMyImageIndex(Player.J_ATTACK_BACKWARD);
+            }
+            //If I'm not umer and animating J
+            else if (me.getCharacter() != Player.UMER && attackAnimationTimers.get(index).get(0) > 0) {
+                me.setMyImageIndex(Player.J_ATTACK_BACKWARD);
+            }
+            //If I'm not moving
+            else if (me.getXVel() == 0) {
+                me.setMyImageIndex(Player.STANDING_BACKWARD);
+            }
+        }
+    }
+    public void handleDeath(Player me, int index){
+        Rectangle screenBounds = new Rectangle(-200,-200,width+200,height+400);
+//        if(dummy != null){
+//            if(!screenBounds.intersects(dummy.getHitBox())){
+//                dummy.setX(500);
+//                dummy.setY(0);
+//                dummy.setXVel(0);
+//                dummy.setYVel(0);
+//            }
+//        }
+
+        //if I'm not on the map, I died
+        if(!screenBounds.intersects(me.getHitBox())) {
+            deathPoints.set(index,new Point((int)me.getX(),(int)me.getY()));
+            deathTimer.set(index,1.0);
+            respawnTimers.set(index,2.0);
+            me.setPercentage(0);
+            me.setLives(me.getLives()-1);
+            me.setMyMoto(null);
+            for(Projectile p : me.getPList()){
+                if(p!=null)
+                    p.setIsNull(true);
+            }
+        }
+        //If I'm respawning, put me in the respawn spot and make me untargetable
+        if(respawnTimers.get(index) > 0){
+            me.setX(530);
+            me.setY(100);
+            me.setXVel(0);
+            me.setYVel(0);
+            respawnTimers.set(index, respawnTimers.get(index) - 1.0/60);
+            me.setUntargetable(true);
+        }else{
+            respawnTimers.set(index,0.0);
+            me.setUntargetable(false);
+        }
+        
+        //update death timers for blast lines
+        if(deathTimer.get(index) > 0){
+            deathTimer.set(index, deathTimer.get(index)-1.0/60);
+        } else
+            deathTimer.set(index,0.0);
+    }
+    public void handleAttackTimers(Player me, int index){
+        //J attack Cooldown
+        if(playerTimers.get(index).get(0) > 0)
+            playerTimers.get(index).set(0,playerTimers.get(index).get(0) - 1.0/60);
+        else
+            playerTimers.get(index).set(0,0.0);
+        //K attack Cooldown
+        if(playerTimers.get(index).get(1) > 0)
+            playerTimers.get(index).set(1,playerTimers.get(index).get(1) - 1.0/60);
+        else
+            playerTimers.get(index).set(1,0.0);
+        //J animation
+        if(attackAnimationTimers.get(index).get(0) > 0)
+            attackAnimationTimers.get(index).set(0,attackAnimationTimers.get(index).get(0) - 1.0/60);
+        else
+            attackAnimationTimers.get(index).set(0,0.0);
+        //k animation
+        if(attackAnimationTimers.get(index).get(1) > 0)
+            attackAnimationTimers.get(index).set(1,attackAnimationTimers.get(index).get(1) - 1.0/60);
+        else
+            attackAnimationTimers.get(index).set(1,0.0);
+        //l animation
+        if(attackAnimationTimers.get(index).get(2) > 0)
+            attackAnimationTimers.get(index).set(2,attackAnimationTimers.get(index).get(2) - 1.0/60);
+        else
+            attackAnimationTimers.get(index).set(2,0.0);
+        //if you caught boomerang, you reset cooldown
+        if(me.getBoomerangList().isEmpty() && me.getCharacter() == Player.LAWRENCE)
+            playerTimers.get(index).set(1,0.0);
+    }
+
 
     public static String parseChar = ";";
 
@@ -178,6 +464,7 @@ public class Animator {
         data+= characterSelected.get(1) + SSMClient.parseChar; //3
         data+= characterSelected.get(2) + SSMClient.parseChar; //4
         data+= characterSelected.get(3) + SSMClient.parseChar; //5
+        data+= packMice() + SSMClient.parseChar; //6
 
         data+= parseChar;
 
@@ -205,6 +492,22 @@ public class Animator {
         clicks.set(pID, Boolean.parseBoolean(strData[11]));
 
         players.get(pID).setPlayerName(strData[12]);
+    }
 
+    private String packMice(){
+        StringBuilder data = new StringBuilder();
+        for(Point p : mouseCoords){
+            data.append(p.x).append("@").append(p.y).append(Projectile.arrayParseChar);
+        }
+        return data.toString();
+    }
+    public static ArrayList<Point> unPackMice(String s){
+        ArrayList<Point> mice = new ArrayList<>();
+        String[] data = s.split(Projectile.arrayParseChar);
+        for(String mouse : data){
+            String[] mouseData = mouse.split("@");
+            mice.add(new Point(Integer.parseInt(mouseData[0]), Integer.parseInt(mouseData[1])));
+        }
+        return mice;
     }
 }

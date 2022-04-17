@@ -9,7 +9,7 @@ import SSMEngines.old.PlayerOld;
 
 import java.awt.*;
 import java.awt.image.ImageObserver;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -34,26 +34,22 @@ public class Platform extends GameObject {
             g.drawImage(bigPlatImg,(int)getX(),(int)getY(),getW(),getH(), io);
     }
     
-    public void animate(ArrayList<PlayerOld> playerList, ArrayList<Platform> platList){
+    public void animate(List<Player> playerList){
         
-        for(PlayerOld player: playerList){
-            for(Platform p: platList){
-                if(p.getW()<600){
-                    if((player.getYVel()>=0 
-                            && player.getY()<=p.getY()-player.getH()
-                            && player.getX()+player.getW()>=p.getX()
-                            && player.getX()<=p.getX()+p.getW()))     
-                    {
-                        player.setGround((int)p.getY());
-                    }
-                } else {
-                    if((player.getYVel()>=0 
-                            && player.getY()<=p.getY()+20-player.getH()
-                            && player.getX()+20>=p.getX()
-                            && player.getX()-20+player.getW()<=p.getX()+p.getW()))     
-                    {
-                        player.setGround((int)p.getY()+20);
-                    }
+        for(Player player: playerList){
+            if (getW() < 600) {
+                if ((player.getYVel() >= 0
+                        && player.getY() <= getY() - player.getH()
+                        && player.getX() + player.getW() >= getX()
+                        && player.getX() <= getX() + getW())) {
+                    player.setGround((int) getY());
+                }
+            } else {
+                if ((player.getYVel() >= 0
+                        && player.getY() <= getY() + 20 - player.getH()
+                        && player.getX() + 20 >= getX()
+                        && player.getX() - 20 + player.getW() <= getX() + getW())) {
+                    player.setGround((int) getY() + 20);
                 }
             }
         }

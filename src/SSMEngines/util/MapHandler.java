@@ -68,7 +68,7 @@ public class MapHandler {
                 g2d.fill(r);
            
                 g2d.setFont(new Font("Sans Serif", Font.BOLD, 60));
-                g2d.setColor(Color.BLACK);
+                g2d.setColor(Color.WHITE);
                 g2d.drawString(mapNames.get(i), 20,490);
                 g2d.drawImage(mapThumbnails.get(i), 20,100,(int)(imageSize*2*1.6),(int)(imageSize*2),io);
             }

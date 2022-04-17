@@ -27,6 +27,8 @@ public class Drawer {
     List<Boolean> characterSelected;
 
     //Map select variables
+    private ArrayList<Point> mice;
+    private static ArrayList<Image> miceImgs;
     private final MapHandler myMapHandler;
     private int mapNumber;
 
@@ -116,6 +118,12 @@ public class Drawer {
         myMapHandler.drawMouseEvents(mouse.x, mouse.y, g,io);
         myMapHandler.drawMapScreen(g,io);
         inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+
+        //draw enemy mice and not your mouse
+        for(int i=0; i<mice.size(); i++){
+            if(i!=playerID)
+                g.drawImage(miceImgs.get(i), mice.get(i).x, mice.get(i).y,30,25, io);
+        }
     }
     public void drawInGame(Graphics g, ImageObserver io){
         inGameBG = myMapHandler.getMapBGs().get(mapNumber);
@@ -199,6 +207,7 @@ public class Drawer {
         characterSelected.set(1, Boolean.parseBoolean(gameData[3]));
         characterSelected.set(2, Boolean.parseBoolean(gameData[4]));
         characterSelected.set(3, Boolean.parseBoolean(gameData[5]));
+        mice = Animator.unPackMice(gameData[6]);
 
         for(int i=1;i<data.length;i++){
             if(data[i].equals("null"))
@@ -210,8 +219,14 @@ public class Drawer {
     }
 
     public static void initImages(Poolkit toolkit){
+        miceImgs = new ArrayList<>();
+
         characterSelectReadyButton = toolkit.getImage("SSMImages/readyButton.png");
         characterSelectReady = toolkit.getImage("SSMImages/ready.png");
+
+        for(int i=1; i<=4; i++){
+            miceImgs.add(toolkit.getImage("SSMImages/mouse"+i+".png"));
+        }
     }
 
 

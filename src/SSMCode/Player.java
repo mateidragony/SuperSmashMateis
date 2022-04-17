@@ -16,9 +16,9 @@ import java.util.stream.Stream;
 
 public class Player extends Actor{
 
-    //--------------------------------------------
-    //Character Image Indices
-    //--------------------------------------------
+    /**
+     * Character Image Indices
+     */
     public static final int MATEI = 0;
     public static final int UMER = 1;
     public static final int ADAM = 2;
@@ -51,9 +51,9 @@ public class Player extends Actor{
     public static final int L_ATTACK_BACKWARD = 13;
 
 
-    //--------------------------------------------
-    //Variables
-    //--------------------------------------------
+    /**
+     * Variables
+     */
     private static ArrayList<Image> myImages;
     private static ArrayList<ArrayList<Image>> myInGameImageLists;
     private static ArrayList<Image> miscImages;
@@ -81,9 +81,9 @@ public class Player extends Actor{
     private int myImageIndex;
 
 
-    //--------------------------------------------
-    //Constructors
-    //--------------------------------------------
+    /**
+     * Constructors
+     */
     public Player(double x, double y, int w, int h, int playerID) {
         super(x,y,w,h);
 
@@ -125,9 +125,9 @@ public class Player extends Actor{
         }
     }
 
-    //------------------------------------------
-    //Player Attack Lists (The player sends their attacks to the server and receives the other players' attack)
-    //------------------------------------------
+    /**
+     *  Player Attack Lists (The player sends their attacks to the server and receives the other players' attack)
+     */
     private static List<List<Projectile>> projectiles;
     private static List<List<Rocket>> rockets;
     private static List<Punch> punches;
@@ -152,24 +152,32 @@ public class Player extends Actor{
     private ArrayList<Boomerang> myBoomerangs;
 
 
-    //--------------------------------------------
-    //Attack Accessors
-    //--------------------------------------------
-    public List<List<Projectile>> getProjectiles(){return projectiles;}
-    public List<List<Rocket>> getRockets(){return rockets;}
-    public List<Punch> getPunches(){return punches;}
-    public List<VerticalPunch> getVPunches(){return vPunches;}
-    public List<Lightning> getLightning(){return lightningList;}
-    public List<GrowingLAttack> getLAttacks(){return lAttacks;}
-    public List<Motorcycle> getMotoList(){return motoList;}
+    /**
+     * Attack Accessors and Modifiers
+     */
+    public ArrayList<Projectile> getPList(){return myProjectiles;}
+    public Punch getPunch(){return myPunch;}
+    public ArrayList<Rocket> getRocketList(){return myRockets;}
+    public VerticalPunch getVPunch(){return myVPunch;}
+    public Lightning getLightning(){return myLightning;}
+    public GrowingLAttack getLAttack(){return myLAttack;}
+    public Motorcycle getMoto(){return myMoto;}
     public boolean isHealing(){return isHealing;}
-    public List<Stick> getSticks(){return sticks;}
-    public List<RainingCode> getRain(){return rainList;}
-    public List<List<Boomerang>> getBoomerangs(){return boomerangs;}
+    public Stick getStick(){return myStick;}
+    public RainingCode getRain(){return myRain;}
+    public ArrayList<Boomerang> getBoomerangList(){return myBoomerangs;}
 
-    //--------------------------------------------
-    //Accessors
-    //--------------------------------------------
+    public void setMyPunch(Punch p){myPunch = p;}
+    public void setMyVPunch(VerticalPunch p){myVPunch = p;}
+    public void setMyLightning(Lightning p){myLightning = p;}
+    public void setMyMoto(Motorcycle p){myMoto = p;}
+    public void setMyStick(Stick p){myStick = p;}
+    public void setMyRain(RainingCode p){myRain = p;}
+
+
+    /**
+     * Accessors
+     */
     public String getTeam(){return team;}
     public int getDirection(){return direction;}
     public int getCharacter(){return character;}
@@ -199,9 +207,9 @@ public class Player extends Actor{
 
     public int getMyImageIndex(){return myImageIndex;}
 
-    //--------------------------------------------
-    //Modifiers
-    //--------------------------------------------
+    /**
+     * Modifiers
+     */
     public void setDirection(int c){direction = c;}
     public void setCharacter(int c){character = c;}
     public void setPlayerName(String c){playerName = c;}
@@ -218,9 +226,9 @@ public class Player extends Actor{
     public void setNadoTimer(double c){nadoTimer = c;}
     public void setStunner(int c){stunner = c;}
 
-    //--------------------------------------------
-    //Initializing Methods
-    //--------------------------------------------
+    /**
+     * Initializing Methods
+     */
     public void initializeAttacks(){
         projectiles = Stream.generate(ArrayList<Projectile>::new).limit(4).collect(Collectors.toList());
         rockets = Stream.generate(ArrayList<Rocket>::new).limit(4).collect(Collectors.toList());
@@ -333,10 +341,10 @@ public class Player extends Actor{
     }
 
 
-    //--------------------------------------------
-    //Methods
-    //--------------------------------------------
-    public void draw(Graphics g, ImageObserver io, int playerID){
+    /**
+     * Methods
+     */
+    public void draw(Graphics g, ImageObserver io){
 
         int[] triangle1XPoints = {20,50,50};
         int[] triangle2XPoints = {1070,1040,1040};
@@ -411,7 +419,7 @@ public class Player extends Actor{
         if(isConfused())
             g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
     }
-    public void animate(ArrayList<Player> players){
+    public void animate(List<Player> players){
         super.animate();
         //animate spock's boss mode
         if(isBoss)
@@ -437,7 +445,7 @@ public class Player extends Actor{
                 setX(getX()-2);
         }
 
-        animateAttacks(players);
+        animateAttacks((ArrayList<Player>) players);
         addAttacksToLists();
     }
     public void animateBoss(){
@@ -886,11 +894,9 @@ public class Player extends Actor{
     }
 
 
-    //----------------------------------------
-    //Packing and unpacking players
-    //----------------------------------------
-    //public static final String parseChar = "/";
-
+    /**
+     * Packing and Unpacking Players
+     */
     public String pack(){
         String packedPlayersInfo = "";
 

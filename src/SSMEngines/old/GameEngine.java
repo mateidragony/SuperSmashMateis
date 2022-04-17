@@ -90,8 +90,7 @@ public class GameEngine extends AnimationPanel {
     private boolean choseMap, enemyChoseMap;
     private double myDeathX,myDeathY,myDeathTimer;
     private double enemyDeathX,enemyDeathY,enemyDeathTimer;
-    
-    private boolean isRunning;
+
     private boolean chargingL, releaseL;
     
     private final PlayerOld dummy;
@@ -342,10 +341,10 @@ public class GameEngine extends AnimationPanel {
         if(me.isOnGround())
             timesJumped = 0;
         
-        for(Platform p: platList){
-            p.draw(g,this);
-            p.animate(playerList, platList);
-        }
+//        for(Platform p: platList){
+//            p.draw(g,this);
+//            p.animate(playerList, platList);
+//        }
         
         if(me.getChargingLAttackStrength() >= PlayerOld.MAX_L)
             releaseL = true;
@@ -364,17 +363,18 @@ public class GameEngine extends AnimationPanel {
             me.animateAndDrawKAttack(playerList, enemy, g, this);
             me.animateAndDrawLAttack(playerList, enemy, g, this);
         }
-        
+
         handlePlayerMovement();
         handleBossMode();
         me.animate();
-        
+
         handleWalkingAnimation();
         handlePlayerImages();
         handleGoingOffScreen(g);
         handleAttackTimer();
         handleStartingGame(g);
-        
+
+        //------------------------------------------------------------------------------------------------------------------------------------------
         playerList.set(0,me); 
         if(playerID != 0)
             playerList.set(1,enemy);
@@ -658,62 +658,48 @@ public class GameEngine extends AnimationPanel {
                     || (me.getCharacter() == PlayerOld.SPOCK && me.getPunch()!=null)
                     || (me.getCharacter() == PlayerOld.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
                 me.setMyImageIndex(PlayerOld.L_ATTACK_FORWARD);
-                isRunning = false;
-            }  
+            }
             else if(me.chargingL()){
                 me.setMyImageIndex(PlayerOld.CHARGE_L_ATTACK_FORWARD);
-                isRunning = false;
             }
             else if(me.getVPunch()!=null || me.getLightning() != null || me.getMoto()!=null || me.isHealing()){
                 me.setMyImageIndex(PlayerOld.K_ATTACK_FORWARD);
-                isRunning = false;
             }
             else if(me.getCharacter()!= PlayerOld.UMER && kAnimationTimer>0){
                 me.setMyImageIndex(PlayerOld.K_ATTACK_FORWARD);
-                isRunning = false;
             }
             else if(me.getPunch()!=null && me.getCharacter()!= PlayerOld.SPOCK){
                 me.setMyImageIndex(PlayerOld.J_ATTACK_FORWARD);
-                isRunning = false;
             }
             else if(me.getCharacter()!= PlayerOld.UMER && jAnimationTimer>0){
                 me.setMyImageIndex(PlayerOld.J_ATTACK_FORWARD);
-                isRunning = false;
             }
             else if(me.getXVel() == 0){
                 me.setMyImageIndex(PlayerOld.STANDING_FORWARD);
-                isRunning = false;
             }
         } else {
             if(me.isLAttacking() || (lAnimationTimer > 0 && me.getCharacter() != PlayerOld.MATEI)
                     || (me.getCharacter() == PlayerOld.SPOCK && me.getPunch()!=null)
                     || (me.getCharacter() == PlayerOld.EMI && me.getPunch()!=null && me.getPunch().getW()>=1000)){
                 me.setMyImageIndex(PlayerOld.L_ATTACK_BACKWARD);
-                isRunning = false;
-            }  
+            }
             else if(me.chargingL()){
                 me.setMyImageIndex(PlayerOld.CHARGE_L_ATTACK_BACKWARD);
-                isRunning = false;
             }
             else if(me.getVPunch()!=null || me.getLightning() != null || me.getMoto()!=null || me.isHealing()){
                 me.setMyImageIndex(PlayerOld.K_ATTACK_BACKWARD);
-                isRunning = false;
             }
             else if(me.getCharacter()!= PlayerOld.UMER && kAnimationTimer>0){
                 me.setMyImageIndex(PlayerOld.K_ATTACK_BACKWARD);
-                isRunning = false;
             }
             else if(me.getPunch()!=null  && me.getCharacter()!= PlayerOld.SPOCK){
                 me.setMyImageIndex(PlayerOld.J_ATTACK_BACKWARD);
-                isRunning = false;
             }
             else if(me.getCharacter()!= PlayerOld.UMER && jAnimationTimer>0){
                 me.setMyImageIndex(PlayerOld.J_ATTACK_BACKWARD);
-                isRunning = false;
             }
             else if(me.getXVel() == 0){
                 me.setMyImageIndex(PlayerOld.STANDING_BACKWARD);
-                isRunning = false;
             }
         }
             
@@ -1308,13 +1294,11 @@ public class GameEngine extends AnimationPanel {
                     || (v==KeyEvent.VK_D && me.isConfused())){
                 left = true;
                 me.setDirection(Projectile.LEFT);
-                isRunning = true;
             }
             if((v==KeyEvent.VK_D && !me.isConfused())
                     || (v==KeyEvent.VK_A && me.isConfused())){
                 right = true;
                 me.setDirection(Projectile.RIGHT);
-                isRunning = true;
             }
             if((v==KeyEvent.VK_W && timesJumped<2 && !me.isConfused())
                     || (v==KeyEvent.VK_S && timesJumped<2 && me.isConfused())){
