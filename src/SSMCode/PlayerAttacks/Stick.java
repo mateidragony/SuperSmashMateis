@@ -86,7 +86,7 @@ public class Stick extends GameObject{
         return str;
     }
     public static Stick unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
         return new Stick(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),

@@ -1,5 +1,6 @@
 package SSMEngines.util;
 
+import SSMCode.Platform;
 import SSMCode.Player;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
@@ -19,7 +20,9 @@ public class Drawer {
     private final int playerMode;
 
     private final List<Player> players;
+    private ArrayList<Platform> platList;
 
+    private boolean justEnteredScreen;
     private int serverScreenNumber;
     private Point mouse;
 
@@ -126,8 +129,27 @@ public class Drawer {
         }
     }
     public void drawInGame(Graphics g, ImageObserver io){
+        //if(justEnteredScreen) {
+        myMapHandler.setMapNumber(mapNumber);
+        Platform.setBigImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber()*2));
+        Platform.setSmallImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber()*2+1));
+        platList = myMapHandler.initPlats();
         inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+
+
         g.drawImage(inGameBG,0,0,width,height,io);
+
+        for(Platform p : platList)
+            p.draw(g,io);
+
+        for(Player p : players) {
+            p.draw(g, io);
+            p.drawAttacks(g,io);
+        }
+
+        g.setColor(Color.black);
+        g.fillRect(10,100,10,100);
+
     }
 
 
@@ -208,6 +230,7 @@ public class Drawer {
         characterSelected.set(2, Boolean.parseBoolean(gameData[4]));
         characterSelected.set(3, Boolean.parseBoolean(gameData[5]));
         mice = Animator.unPackMice(gameData[6]);
+        justEnteredScreen = Boolean.parseBoolean(gameData[7]);
 
         for(int i=1;i<data.length;i++){
             if(data[i].equals("null"))

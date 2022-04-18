@@ -1,6 +1,7 @@
 package SSMEngines;
 
 import SSMCode.Player;
+import SSMCode.PlayerAttacks.*;
 import SSMEngines.util.Animator;
 import SSMEngines.util.Drawer;
 import SSMEngines.util.MapHandler;
@@ -316,6 +317,12 @@ public class SSMClient extends AnimationPanel{
 
         Player.initImages();
         Drawer.initImages(poolkit);
+        Rocket.initImage();
+        Lightning.initImages();
+        GrowingLAttack.initImage();
+        Motorcycle.initImages();
+        Stick.initImages();
+        Projectile.initImages();
 
         try {
             introScreen = ImageIO.read(new File("SSMImages/introScreen.png"));

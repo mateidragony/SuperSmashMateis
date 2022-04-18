@@ -90,7 +90,7 @@ public class VerticalPunch extends Punch{
         return str;
     }
     public static VerticalPunch unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
         return new VerticalPunch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),

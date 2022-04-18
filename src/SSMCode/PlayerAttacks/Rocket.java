@@ -139,7 +139,7 @@ public class Rocket extends Actor{
         }
     }
     public static Rocket unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] myInfo = s.split(SSMClient.parseChar);
 

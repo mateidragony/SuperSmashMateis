@@ -1321,7 +1321,6 @@ public class GameEngine extends AnimationPanel {
                     && !me.isHealing())
                 chargingL = true;
         }
-            
     }
     public void keyReleased(KeyEvent e)
     {

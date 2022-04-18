@@ -6,8 +6,10 @@ import SSMCode.Player;
 import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
+import SSMEngines.old.PlayerOld;
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +49,7 @@ public class Animator {
     private final int numPlayers;
     private int screenNumber;
     private String bossCode = "Zbogck";
+    private boolean justEnteredScreen;
 
     //timers
     private List<Double> deathTimer; //timer for the blast lines
@@ -62,6 +65,7 @@ public class Animator {
     private List<Integer> timesJumped;
     private List<Boolean> chargingL;
     private List<Boolean> releaseL;
+    private boolean bossMode; //if any player is boss, bossMode = true
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
@@ -92,7 +96,7 @@ public class Animator {
     public void initArrayLists(){
         //Sent from client
         players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
-        playerMoves = Stream.generate(ArrayList<Boolean>::new).limit(4).collect(Collectors.toList());
+        playerMoves = Stream.generate(() -> Stream.generate(() -> Boolean.FALSE).limit(8).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
         mouseCoords = Stream.generate(() -> new Point(-100,-100)).limit(4).collect(Collectors.toList());
         clicks = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
         //character select and end screen
@@ -154,11 +158,13 @@ public class Animator {
                 Platform.setBigImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber() * 2));
                 Platform.setSmallImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber() * 2 + 1));
                 platList = mapHandler.initPlats();
+                justEnteredScreen = true;
                 screenNumber++;
             }
         }
     }
     public void animateGame(){
+        justEnteredScreen = false;
         //increment the game time
         gameTimer += 1.0/60;
         //if any player has 0 lives they can't play anymore
@@ -171,8 +177,16 @@ public class Animator {
             }
         }
         //if only one player is alive, end game
-        if(numPlayersDead >= numPlayers-1)
+        if(numPlayersDead >= numPlayers-1 && numPlayers != 1)
             screenNumber++;
+        //check if an enemy is boss
+        bossMode = false;
+        for(Player p : players){
+            if(p.isBoss()){
+                bossMode = true;
+                break;
+            }
+        }
         //if a player lands on ground, reset their jumps
         for(int i=0; i<players.size(); i++){
             if(players.get(i).isOnGround())
@@ -201,6 +215,8 @@ public class Animator {
         //animate the players
         for(int i=0; i<players.size(); i++) {
             Player p = players.get(i);
+
+            handlePlayerInputs(p, i);
 
             handlePlayerMovement(p,i);
             handleGravity(p);
@@ -257,11 +273,61 @@ public class Animator {
         //Movement only if you pressed the button to move, you're not on motorcycle
         //you're not dashing, and you aren't exceeding speed limit
         if(playerMoves.get(index).get(LEFT) && me.getMoto() == null
-                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7)
+                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(-5);
+            me.setDirection(Projectile.LEFT);
+            //confusion inverts controls
+            if(me.isConfused()){
+                me.setXVel(5);
+                me.setDirection(Projectile.RIGHT);
+            }
+
+        }
         if(playerMoves.get(index).get(RIGHT) && me.getMoto() == null
-                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7)
+                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(5);
+            me.setDirection(Projectile.RIGHT);
+            //confusion inverts controls
+            if(me.isConfused()){
+                me.setXVel(-5);
+                me.setDirection(Projectile.LEFT);
+            }
+        }
+        //When you press W
+        if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2){
+            //confusion inverts controls
+            if(!me.isConfused()) {
+                if (!bossMode)
+                    me.setYVel(-10);
+                else
+                    me.setYVel(-4.5);
+                timesJumped.set(index, timesJumped.get(index) + 1);
+            } else {
+                if(!me.isBoss())
+                    me.setTaunting(true);
+            }
+        }
+        //When you press S
+        if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2){
+            //confusion inverts controls
+            if(me.isConfused()) {
+                if (!bossMode)
+                    me.setYVel(-10);
+                else
+                    me.setYVel(-4.5);
+                timesJumped.set(index, timesJumped.get(index) + 1);
+            } else {
+                if(!me.isBoss())
+                    me.setTaunting(true);
+            }
+        }
+
+        //Stop taunting
+        if(!playerMoves.get(index).get(DOWN) && !me.isConfused())
+            me.setTaunting(false);
+        if(!playerMoves.get(index).get(UP) && me.isConfused())
+            me.setTaunting(false);
+
 
         //boss movement
         if(me.isBoss() && playerMoves.get(index).get(UP))
@@ -274,14 +340,6 @@ public class Animator {
             me.setXVel(7);
     }
     public void handleGravity(Player me){
-        //check if an enemy is boss
-        boolean bossMode = false;
-        for(Player p : players){
-            if(!p.equals(me) && p.isBoss()){
-                bossMode = true;
-                break;
-            }
-        }
         //if an enemy is the boss, slow everything down
         if(bossMode){
             Actor.GRAVITY = 0.1;
@@ -451,7 +509,60 @@ public class Animator {
         if(me.getBoomerangList().isEmpty() && me.getCharacter() == Player.LAWRENCE)
             playerTimers.get(index).set(1,0.0);
     }
+    public void handlePlayerInputs(Player me, int index){
 
+        boolean j = playerMoves.get(index).get(J);
+        boolean k = playerMoves.get(index).get(K);
+        boolean l = playerMoves.get(index).get(L);
+
+        //J and K attacks
+        //if the game has started, you're in game, you're not using lightning, and you're not stunned, you can attack
+        if(startGameTimer == 0 && screenNumber == IN_GAME_SCREEN && me.getLightning() == null && !me.isStunned()) {
+            //J attack, cooldown = 0, and no motorcycle, and not healing
+            if (j && playerTimers.get(index).get(0) == 0 && me.getMoto() == null && !me.isHealing()) {
+                me.doJAttack();
+                //set j cooldown to 0.25
+                playerTimers.get(index).set(0,0.25);
+                //j animation
+                attackAnimationTimers.get(index).set(0,0.25);
+                //spock and emi and obama have a longer cooldown
+                if (me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.EMI)
+                    playerTimers.get(index).set(0,0.5);
+                if (me.getCharacter() == PlayerOld.OBAMA)
+                    playerTimers.get(index).set(0,1.0);
+            }
+            //K attack, cooldown = 0
+            if (k && playerTimers.get(index).get(1) == 0) {
+                me.doKAttack();
+                //set k cooldown to 1.25
+                playerTimers.get(index).set(1,1.25);
+                //k animation
+                attackAnimationTimers.get(index).set(1,0.25);
+                if (me.getCharacter() == PlayerOld.ADAM || me.getCharacter() == PlayerOld.EMI)
+                    playerTimers.get(index).set(1,5.0); //Adam and emi have cooldown of 5
+                else if (me.getCharacter() == PlayerOld.SALOME)
+                    playerTimers.get(index).set(1,.25); //salome has cooldown of .25
+                else if (me.getCharacter() == PlayerOld.KAUSHAL)
+                    playerTimers.get(index).set(1,.75); //Kaushal has cooldown on .75
+                else if (me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.LAWRENCE) {
+                    playerTimers.get(index).set(1,8.0); //spock and lawrence have cooldown of 8
+                    attackAnimationTimers.get(index).set(1,0.6); //k animation
+                } else if (me.getCharacter() == PlayerOld.LISON)
+                    playerTimers.get(index).set(1,3.0); //Lison has cooldown of 3
+                else if (me.getCharacter() == PlayerOld.OBAMA) {
+                    playerTimers.get(index).set(1,.3); //obama has cooldown of .3
+                    attackAnimationTimers.get(index).set(1,0.4);
+                }
+            }
+        }
+        //L attacks
+        if(l && !me.isLAttacking() && me.getLCooldown() <=0 && me.getLightning() == null
+                && !me.isHealing())
+            chargingL.set(index, true);
+        else if(!l && me.getLCooldown() <=0 && me.getLightning() == null
+                && !me.isHealing())
+            releaseL.set(index, true);
+    }
 
     public static String parseChar = ";";
 
@@ -465,6 +576,7 @@ public class Animator {
         data+= characterSelected.get(2) + SSMClient.parseChar; //4
         data+= characterSelected.get(3) + SSMClient.parseChar; //5
         data+= packMice() + SSMClient.parseChar; //6
+        data+= justEnteredScreen + SSMClient.parseChar; //7
 
         data+= parseChar;
 

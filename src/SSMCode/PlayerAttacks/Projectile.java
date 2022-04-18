@@ -171,8 +171,8 @@ public class Projectile extends Actor{
         myImages = new ArrayList<>();
         
         myImages.add(toolkit.getImage("SSMImages/Spock/Spock_Missle.png"));
-        myImages.add(toolkit.getImage("SSMImages/Spock/R_1_F.png"));
-        myImages.add(toolkit.getImage("SSMImages/Spock/R_1_B.png"));
+        myImages.add(toolkit.getImage("SSMImages/Spock/R_F_1.png"));
+        myImages.add(toolkit.getImage("SSMImages/Spock/R_B_1.png"));
         myImages.add(toolkit.getImage("SSMImages/Obama/BodyGuard_F.png"));
         myImages.add(toolkit.getImage("SSMImages/Obama/Bodyguard_B.png"));
         myImages.add(toolkit.getImage("SSMImages/Emi/confusion.png"));
@@ -206,7 +206,7 @@ public class Projectile extends Actor{
         }
     }
     public static Projectile unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] myInfo = s.split(SSMClient.parseChar);
         return new Projectile((int)Double.parseDouble(myInfo[0]),(int)Double.parseDouble(myInfo[1]),

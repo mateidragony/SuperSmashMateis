@@ -167,12 +167,16 @@ public class Player extends Actor{
     public RainingCode getRain(){return myRain;}
     public ArrayList<Boomerang> getBoomerangList(){return myBoomerangs;}
 
+    public void setPList(ArrayList<Projectile> pList){myProjectiles = pList;}
     public void setMyPunch(Punch p){myPunch = p;}
+    public void setRocketList(ArrayList<Rocket> rList){myRockets = rList;}
     public void setMyVPunch(VerticalPunch p){myVPunch = p;}
     public void setMyLightning(Lightning p){myLightning = p;}
     public void setMyMoto(Motorcycle p){myMoto = p;}
+    public void setLAttack(GrowingLAttack g){myLAttack = g;}
     public void setMyStick(Stick p){myStick = p;}
     public void setMyRain(RainingCode p){myRain = p;}
+    public void setBoomerangs(ArrayList<Boomerang> bList){myBoomerangs = bList;}
 
 
     /**
@@ -225,6 +229,7 @@ public class Player extends Actor{
     public void setChargingLAttackStrength(double c){chargingLAttackStrength = c;}
     public void setNadoTimer(double c){nadoTimer = c;}
     public void setStunner(int c){stunner = c;}
+    public void setHealing(boolean c){isHealing = c;}
 
     /**
      * Initializing Methods
@@ -516,27 +521,34 @@ public class Player extends Actor{
         }
     }
 
-    public static void drawAttacks(Graphics g, ImageObserver io){
-        //Streams through all the lists in projectiles then streams through those and draws the projectile
-        projectiles.stream().flatMap(List::stream).filter(Objects::nonNull).forEach(p->p.draw(g,io));
-        //Streams through all the lists in rockets then streams through those and draws the rocket
-        rockets.stream().flatMap(List::stream).filter(Objects::nonNull).forEach(r->r.draw(g,io));
-        //Streams through punches and draws each punch
-        punches.stream().filter(Objects::nonNull).forEach(p->p.draw(g,io));
-        //Streams through vertical punches and draws each vertical punch
-        vPunches.stream().filter(Objects::nonNull).forEach(vP->vP.draw(g,io));
-        //Streams through lightnings and draws each lightning
-        lightningList.stream().filter(Objects::nonNull).forEach(l->l.draw(g,io));
-        //Streams through LAttacks and draws each LAttack
-        lAttacks.stream().filter(Objects::nonNull).forEach(l->l.draw(g,io));;
-        //Streams through Motorcycles and draws each motorcycle
-        motoList.stream().filter(Objects::nonNull).forEach(m->m.draw(g,io));;
-        //Streams through sticks and draws each stick
-        sticks.stream().filter(Objects::nonNull).forEach(s->s.draw(g,io));;
-        //Streams through rains and draws each rain
-        rainList.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));;
-        //Streams through all the lists in boomerangs then streams through those and draws the boomerang
-        boomerangs.forEach(list->list.stream().filter(Objects::nonNull).forEach(b->b.draw(g,io)));;
+    public void drawAttacks(Graphics g, ImageObserver io){
+        //Streams through projectiles and draws them
+        myProjectiles.stream().filter(Objects::nonNull).forEach(p->p.draw(g,io));
+        //Streams through rockets and draws them
+        myRockets.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
+        //draw punch
+        if(myPunch!=null)
+            myPunch.draw(g,io);
+        //draw vertical punch
+        if(myVPunch!=null)
+            myVPunch.draw(g,io);
+        //draw lightning
+        if(myLightning!=null)
+            myLightning.draw(g,io);
+        //draw L attack
+        if(myLAttack!=null)
+            myLAttack.draw(g,io);
+        //draw moto
+        if(myMoto!=null)
+            myMoto.draw(g,io);
+        //draw stick
+        if(myStick!=null)
+            myStick.draw(g,io);
+        //draw rain
+        if(myRain!=null)
+            myRain.draw(g,io);
+        //Streams through boomerangs and draws them
+        myBoomerangs.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
     }
     public void animateAttacks(ArrayList<Player> players){
         //Animate only my Projectiles
@@ -897,6 +909,9 @@ public class Player extends Actor{
     /**
      * Packing and Unpacking Players
      */
+
+    public static final String parseChar = "/";
+
     public String pack(){
         String packedPlayersInfo = "";
 
@@ -922,25 +937,29 @@ public class Player extends Actor{
         packedPlayersInfo += chargingLAttackStrength + SSMClient.parseChar; //18
         packedPlayersInfo += stunner + SSMClient.parseChar; //19
 
-        //        packedPlayersInfo += parseChar;
-//
-//        //pack the attacks
-//        packedPlayersInfo += Projectile.packArray(myProjectiles) + parseChar;
-//        packedPlayersInfo += Rocket.packArray(myRockets) + parseChar;
-//        packedPlayersInfo += Punch.pack(myPunch) + parseChar;
-//        packedPlayersInfo += VerticalPunch.pack(myVPunch) + parseChar;
-//        packedPlayersInfo += Lightning.pack(myLightning) + parseChar;
-//        packedPlayersInfo += GrowingLAttack.pack(myLAttack) + parseChar;
-//        packedPlayersInfo += Motorcycle.pack(myMoto) + parseChar;
-//        packedPlayersInfo += isHealing + parseChar;
-//        packedPlayersInfo += Stick.pack(myStick) + parseChar;
-//        packedPlayersInfo += RainingCode.pack(myRain) + parseChar;
-//        packedPlayersInfo += Boomerang.packArray(myBoomerangs) + parseChar;
+        packedPlayersInfo += parseChar;
+
+        //pack the attacks
+        packedPlayersInfo += Projectile.packArray(myProjectiles) + parseChar;
+        packedPlayersInfo += Rocket.packArray(myRockets) + parseChar;
+        packedPlayersInfo += Punch.pack(myPunch) + parseChar;
+        packedPlayersInfo += VerticalPunch.pack(myVPunch) + parseChar;
+        packedPlayersInfo += Lightning.pack(myLightning) + parseChar;
+        packedPlayersInfo += GrowingLAttack.pack(myLAttack) + parseChar;
+        packedPlayersInfo += Motorcycle.pack(myMoto) + parseChar;
+        packedPlayersInfo += isHealing + parseChar;
+        packedPlayersInfo += Stick.pack(myStick) + parseChar;
+        packedPlayersInfo += RainingCode.pack(myRain) + parseChar;
+        packedPlayersInfo += Boomerang.packArray(myBoomerangs) + parseChar;
+
+        //System.out.println(packedPlayersInfo);
 
         return packedPlayersInfo;
     }
     public static Player unPack(String str){
-        String[] data = str.split(SSMClient.parseChar);
+
+        String[] playerData = str.split(parseChar);
+        String[] data = playerData[0].split(SSMClient.parseChar);
 
         Player player = new Player(Integer.parseInt(data[0]),Integer.parseInt(data[1]),Integer.parseInt(data[2]),
                 Integer.parseInt(data[3]),Integer.parseInt(data[4]));
@@ -959,6 +978,18 @@ public class Player extends Actor{
         player.setFlameDuration(Double.parseDouble(data[17]));
         player.setChargingLAttackStrength(Double.parseDouble(data[18]));
         player.setStunner(Integer.parseInt(data[19]));
+
+        player.setPList(Projectile.unPackArray(playerData[1]));
+        player.setRocketList(Rocket.unPackArray(playerData[2]));
+        player.setMyPunch(Punch.unPack(playerData[3]));
+        player.setMyVPunch(VerticalPunch.unPack(playerData[4]));
+        player.setMyLightning(Lightning.unPack(playerData[5]));
+        player.setLAttack(GrowingLAttack.unPack(playerData[6]));
+        player.setMyMoto(Motorcycle.unPack(playerData[7]));
+        player.setHealing(Boolean.parseBoolean(playerData[8]));
+        player.setMyStick(Stick.unPack(playerData[9]));
+        player.setMyRain(RainingCode.unPack(playerData[10]));
+        player.setBoomerangs(Boomerang.unPackArray(playerData[11]));
 
         return player;
     }

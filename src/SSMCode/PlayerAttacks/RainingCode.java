@@ -88,7 +88,7 @@ public class RainingCode extends Actor{
         return str;
     }
     public static RainingCode unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
         return new RainingCode(Integer.parseInt(data[0]),Integer.parseInt(data[1]),data[2],Integer.parseInt(data[3]));

@@ -241,7 +241,7 @@ public class Punch extends GameObject{
         return str;
     }
     public static Punch unPack(String s){
-        if(s.equals("null"))
+        if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
         return new Punch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
