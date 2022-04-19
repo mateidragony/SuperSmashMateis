@@ -95,7 +95,7 @@ public class Player extends Actor{
 
         lives = 3;
 
-        playerName = "UmerMain123";
+        playerName = "I have no name :(";
 
         switch(playerID){
             case(0) -> {team = "red"; color = Color.red;}
@@ -105,7 +105,7 @@ public class Player extends Actor{
         }
     }
     public Player(int playerID) {
-        super(0,0,40,60);
+        super(0,0,60,90);
 
         this.playerID = playerID;
         character = DUMMY;
@@ -115,7 +115,7 @@ public class Player extends Actor{
 
         lives = 3;
 
-        playerName = "UmerMain123";
+        playerName = "I have no name :(";
 
         switch(playerID){
             case(0) -> {team = "red"; color = Color.red;}
@@ -660,6 +660,8 @@ public class Player extends Actor{
                 b.setIntersecting(this.intersects(b));
                 b.animateMovement();
                 b.animateDamage(players);
+                if(b.isNull())
+                    myBoomerangs.remove(i);
             }else
                 myBoomerangs.remove(i);
         }

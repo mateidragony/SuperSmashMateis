@@ -149,6 +149,8 @@ public class Rocket extends Actor{
     }
     public static String packArray(ArrayList<Rocket> pList){
         String packedPList = "";
+        if(pList.isEmpty())
+            return "null";
         for(int i=pList.size()-1;i>=0;i--){
             Rocket p = pList.get(i);
             packedPList = packedPList.concat(pack(p)+Projectile.arrayParseChar);
@@ -157,6 +159,8 @@ public class Rocket extends Actor{
     }
     public static ArrayList<Rocket> unPackArray(String packedPList){
         ArrayList<Rocket> pList = new ArrayList<>();
+        if(packedPList.equals("null"))
+            return pList;
         for(String s: packedPList.split(Projectile.arrayParseChar)){
             pList.add(unPack(s));
         }

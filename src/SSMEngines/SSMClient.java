@@ -323,6 +323,8 @@ public class SSMClient extends AnimationPanel{
         Motorcycle.initImages();
         Stick.initImages();
         Projectile.initImages();
+        Boomerang.initImages(poolkit);
+        RainingCode.initImage(poolkit);
 
         try {
             introScreen = ImageIO.read(new File("SSMImages/introScreen.png"));

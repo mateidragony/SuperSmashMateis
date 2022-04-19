@@ -61,7 +61,14 @@ public class Lightning extends GameObject{
         timer -= 1.0/60;
         if(timer <= 0)
             isNull = true;
-        
+
+        if(drawTimer < 0)
+            drawTimer = 1;
+        if(shooter == Player.ADAM)
+            drawTimer -=0.1;
+        else if(shooter == Player.LAWRENCE)
+            drawTimer -=0.2;
+
         for(Player target : targets) {
             if (this.getHitBox().intersects(target.getHitBox())
                     && !team.equals(target.getTeam())
@@ -83,14 +90,7 @@ public class Lightning extends GameObject{
     }
     
     public void draw(Graphics g, ImageObserver io){
-        
-        if(drawTimer < 0)
-            drawTimer = 1;
-        if(shooter == Player.ADAM)
-            drawTimer -=0.1;
-        else if(shooter == Player.LAWRENCE)
-            drawTimer -=0.2;
-        
+
         Image currentImage;
         if(dir==Projectile.RIGHT){
             if(shooter == Player.ADAM){

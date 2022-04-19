@@ -166,7 +166,7 @@ public class Punch extends GameObject{
             }
             
             //Jemi (Jumex)
-            if(dir == Projectile.LEFT && shooter== Player.EMI && getW() >= 1000){
+            if(dir == Projectile.LEFT && shooter == Player.EMI && getW() >= 1000){
                 g.drawImage(myImages.get(10),(int)(getX()+13-getW()),(int)(getY()-10+shooterH/3-getH()/1.5),
                         (getW()),getH(),io);
             } else if(dir == Projectile.RIGHT && shooter== Player.EMI && getW() >= 1000) {
@@ -174,7 +174,7 @@ public class Punch extends GameObject{
                         (getW()),getH(),io);
             }
             //Jemi (Elastijemi)
-            else if(dir == Projectile.LEFT && shooter== Player.EMI){
+            else if(dir == Projectile.LEFT && shooter == Player.EMI){
                 g.drawImage(myImages.get(12),(int)(getX()+14-getW()+punchCD*50),(int)(getY()-14+shooterH/3),
                         (int)(getW()+10-punchCD*50),getH()*2,io);
             } else if(dir == Projectile.RIGHT && shooter== Player.EMI) {
@@ -236,17 +236,21 @@ public class Punch extends GameObject{
         str += p.getPunchCD() + SSMClient.parseChar;
         str += p.getCanHurt() + SSMClient.parseChar;
         str += p.getShooter() + SSMClient.parseChar;
-        str += p.getShooterSize().getWidth() + SSMClient.parseChar;
-        str += p.getShooterSize().getHeight() + SSMClient.parseChar;
+        str += (int)p.getShooterSize().getWidth() + SSMClient.parseChar;
+        str += (int)p.getShooterSize().getHeight() + SSMClient.parseChar;
+        str += p.getW() + SSMClient.parseChar;
+        str += p.getH() + SSMClient.parseChar;
         return str;
     }
     public static Punch unPack(String s){
         if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
-        return new Punch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
+        Punch p = new Punch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
                 data[3], Double.parseDouble(data[4]), Boolean.parseBoolean(data[5]), Integer.parseInt(data[6]),
                 Integer.parseInt(data[7]), Integer.parseInt(data[8]));
+        p.setSize(Integer.parseInt(data[9]), Integer.parseInt(data[10]));
+        return p;
     }
 
 

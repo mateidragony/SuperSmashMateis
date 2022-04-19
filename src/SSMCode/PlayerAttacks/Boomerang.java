@@ -69,6 +69,9 @@ public class Boomerang extends Actor{
         if(intersecting && returning)
             isNull = true;
 
+        if(drawTimer < 0)
+            drawTimer = 1;
+        drawTimer -=0.1;
         
         if((getX() >= maxX || getX() <= minX) && !returning){
             returning = true;
@@ -93,9 +96,6 @@ public class Boomerang extends Actor{
     }
     
     public void draw(Graphics g, ImageObserver io){
-        if(drawTimer < 0)
-            drawTimer = 1;
-        drawTimer -=0.1;
         
         Image currentImage = null;
 
@@ -147,6 +147,8 @@ public class Boomerang extends Actor{
     }
     public static String packArray(ArrayList<Boomerang> pList){
         String packedPList = "";
+        if(pList.isEmpty())
+            return "null";
         for(int i=pList.size()-1;i>=0;i--){
             Boomerang p = pList.get(i);
             packedPList = packedPList.concat(pack(p)+Projectile.arrayParseChar);
@@ -155,6 +157,8 @@ public class Boomerang extends Actor{
     }
     public static ArrayList<Boomerang> unPackArray(String packedPList){
         ArrayList<Boomerang> pList = new ArrayList<>();
+        if(packedPList.equals("null"))
+            return pList;
         for(String s: packedPList.split(Projectile.arrayParseChar)){
             pList.add(unPack(s));
         }

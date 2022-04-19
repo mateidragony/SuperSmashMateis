@@ -85,8 +85,8 @@ public class VerticalPunch extends Punch{
         str += p.getPunchCD() + SSMClient.parseChar;
         str += p.getCanHurt() + SSMClient.parseChar;
         str += p.getShooter() + SSMClient.parseChar;
-        str += p.getShooterSize().getWidth() + SSMClient.parseChar;
-        str += p.getShooterSize().getHeight() + SSMClient.parseChar;
+        str += (int)p.getShooterSize().getWidth() + SSMClient.parseChar;
+        str += (int)p.getShooterSize().getHeight() + SSMClient.parseChar;
         return str;
     }
     public static VerticalPunch unPack(String s){

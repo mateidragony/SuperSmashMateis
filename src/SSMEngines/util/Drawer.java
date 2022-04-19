@@ -7,6 +7,7 @@ import SSMEngines.SSMClient;
 
 import java.awt.*;
 import java.awt.image.ImageObserver;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,9 +23,10 @@ public class Drawer {
     private final List<Player> players;
     private ArrayList<Platform> platList;
 
-    private boolean justEnteredScreen;
     private int serverScreenNumber;
     private Point mouse;
+
+    private boolean enteredGameScreen = true;
 
     //Character select variables
     List<Boolean> characterSelected;
@@ -39,6 +41,9 @@ public class Drawer {
     private Image inGameBG;
     private static Image characterSelectReadyButton;
     private static Image characterSelectReady;
+
+    private final Font myFont = new Font("Sans Serif", Font.BOLD, 60);
+    private final DecimalFormat df = new DecimalFormat("####.#");
 
     public Drawer(int playerID, int playerMode){
         this.playerID = playerID;
@@ -123,18 +128,21 @@ public class Drawer {
         inGameBG = myMapHandler.getMapBGs().get(mapNumber);
 
         //draw enemy mice and not your mouse
-        for(int i=0; i<mice.size(); i++){
+        for(int i=0; i<playerMode; i++){
             if(i!=playerID)
                 g.drawImage(miceImgs.get(i), mice.get(i).x, mice.get(i).y,30,25, io);
         }
     }
     public void drawInGame(Graphics g, ImageObserver io){
-        //if(justEnteredScreen) {
-        myMapHandler.setMapNumber(mapNumber);
-        Platform.setBigImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber()*2));
-        Platform.setSmallImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber()*2+1));
-        platList = myMapHandler.initPlats();
-        inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+        if(enteredGameScreen) {
+            myMapHandler.setMapNumber(mapNumber);
+            Platform.setBigImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber() * 2));
+            Platform.setSmallImg(myMapHandler.getMapPlats().get(myMapHandler.getMapNumber() * 2 + 1));
+            platList = myMapHandler.initPlats();
+            inGameBG = myMapHandler.getMapBGs().get(mapNumber);
+
+            enteredGameScreen = false;
+        }
 
 
         g.drawImage(inGameBG,0,0,width,height,io);
@@ -146,9 +154,6 @@ public class Drawer {
             p.draw(g, io);
             p.drawAttacks(g,io);
         }
-
-        g.setColor(Color.black);
-        g.fillRect(10,100,10,100);
 
     }
 
@@ -230,7 +235,6 @@ public class Drawer {
         characterSelected.set(2, Boolean.parseBoolean(gameData[4]));
         characterSelected.set(3, Boolean.parseBoolean(gameData[5]));
         mice = Animator.unPackMice(gameData[6]);
-        justEnteredScreen = Boolean.parseBoolean(gameData[7]);
 
         for(int i=1;i<data.length;i++){
             if(data[i].equals("null"))
@@ -247,9 +251,10 @@ public class Drawer {
         characterSelectReadyButton = toolkit.getImage("SSMImages/readyButton.png");
         characterSelectReady = toolkit.getImage("SSMImages/ready.png");
 
-        for(int i=1; i<=4; i++){
-            miceImgs.add(toolkit.getImage("SSMImages/mouse"+i+".png"));
-        }
+        miceImgs.add(toolkit.getImage("SSMImages/mouse1.png"));
+        miceImgs.add(toolkit.getImage("SSMImages/mouse2.png"));
+        miceImgs.add(toolkit.getImage("SSMImages/mouse3.png"));
+        miceImgs.add(toolkit.getImage("SSMImages/mouse4.png"));
     }
 
 

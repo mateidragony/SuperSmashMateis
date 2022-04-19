@@ -215,6 +215,8 @@ public class Projectile extends Actor{
     }
     public static String packArray(ArrayList<Projectile> pList){
         String packedPList = "";
+        if(pList.isEmpty())
+            return "null";
         for(int i=pList.size()-1;i>=0;i--){
             Projectile p = pList.get(i);
             packedPList = packedPList.concat(pack(p)+arrayParseChar);
@@ -223,6 +225,8 @@ public class Projectile extends Actor{
     }
     public static ArrayList<Projectile> unPackArray(String packedPList){
         ArrayList<Projectile> pList = new ArrayList<>();
+        if(packedPList.equals("null"))
+            return pList;
         for(String s: packedPList.split(arrayParseChar)){
             pList.add(unPack(s));
         }

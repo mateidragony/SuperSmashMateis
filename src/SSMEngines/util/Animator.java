@@ -37,10 +37,6 @@ public class Animator {
     public static final int UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3;
     public static final int J = 4, K = 5, L = 6, P = 7, ENTER = 8;
 
-    private final Font myFont = new Font("Sans Serif", Font.BOLD, 60);
-    private final DecimalFormat df = new DecimalFormat("####.#");
-
-
     //------------------------------------------------------------
     //Instance Bariables
     //------------------------------------------------------------
@@ -66,6 +62,7 @@ public class Animator {
     private List<Boolean> chargingL;
     private List<Boolean> releaseL;
     private boolean bossMode; //if any player is boss, bossMode = true
+    private List<Integer> frameJumpedAt; //To prevent instant double jump bug
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
@@ -110,8 +107,9 @@ public class Animator {
         //in game
         deathPoints = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
         timesJumped = Stream.generate(()->0).limit(4).collect(Collectors.toList());
-        chargingL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());;
-        releaseL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());;
+        chargingL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        releaseL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        frameJumpedAt = Stream.generate(()->0).limit(4).collect(Collectors.toList());
     }
 
     public void animate(){
@@ -159,6 +157,12 @@ public class Animator {
                 Platform.setSmallImg(mapHandler.getMapPlats().get(mapHandler.getMapNumber() * 2 + 1));
                 platList = mapHandler.initPlats();
                 justEnteredScreen = true;
+
+                players.get(0).setX(140);
+                players.get(1).setX(900);
+                players.get(2).setX(393);
+                players.get(3).setX(646);
+
                 screenNumber++;
             }
         }
@@ -172,7 +176,7 @@ public class Animator {
         for(Player p : players){
             if(p.getLives() <= 0){
                 p.setX(-1000); p.setY(-1000);
-                p.setConfusionDuration(10000);
+                p.setStunDuration(10000);
                 numPlayersDead++;
             }
         }
@@ -199,7 +203,7 @@ public class Animator {
         for(int i=0; i<players.size(); i++){
             Player p = players.get(i);
             //If player is at max L charge, release L
-            if(p.getChargingLAttackStrength() > Player.MAX_L)
+            if(p.getChargingLAttackStrength() >= Player.MAX_L)
                 releaseL.set(i,true);
             //if charging, make player charge L
             if(chargingL.get(i))
@@ -272,7 +276,7 @@ public class Animator {
     public void handlePlayerMovement(Player me, int index){
         //Movement only if you pressed the button to move, you're not on motorcycle
         //you're not dashing, and you aren't exceeding speed limit
-        if(playerMoves.get(index).get(LEFT) && me.getMoto() == null
+        if(playerMoves.get(index).get(LEFT)
                 && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(-5);
             me.setDirection(Projectile.LEFT);
@@ -283,7 +287,7 @@ public class Animator {
             }
 
         }
-        if(playerMoves.get(index).get(RIGHT) && me.getMoto() == null
+        if(playerMoves.get(index).get(RIGHT)
                 && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(5);
             me.setDirection(Projectile.RIGHT);
@@ -295,27 +299,29 @@ public class Animator {
         }
         //When you press W
         if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2){
-            //confusion inverts controls
-            if(!me.isConfused()) {
+            //confusion inverts controls and not instant double jump
+            if(!me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
                 if (!bossMode)
                     me.setYVel(-10);
                 else
                     me.setYVel(-4.5);
                 timesJumped.set(index, timesJumped.get(index) + 1);
+                frameJumpedAt.set(index, frameNumber);
             } else {
                 if(!me.isBoss())
                     me.setTaunting(true);
             }
         }
         //When you press S
-        if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2){
-            //confusion inverts controls
-            if(me.isConfused()) {
+        if(playerMoves.get(index).get(DOWN) && timesJumped.get(index)<2){
+            //confusion inverts controls and not instant double jump
+            if(me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
                 if (!bossMode)
                     me.setYVel(-10);
                 else
                     me.setYVel(-4.5);
                 timesJumped.set(index, timesJumped.get(index) + 1);
+                frameJumpedAt.set(index, frameNumber);
             } else {
                 if(!me.isBoss())
                     me.setTaunting(true);
@@ -328,6 +334,12 @@ public class Animator {
         if(!playerMoves.get(index).get(UP) && me.isConfused())
             me.setTaunting(false);
 
+
+        //Just change the direction of player
+        if(playerMoves.get(index).get(LEFT))
+            me.setDirection(Projectile.LEFT);
+        if(playerMoves.get(index).get(RIGHT))
+            me.setDirection(Projectile.RIGHT);
 
         //boss movement
         if(me.isBoss() && playerMoves.get(index).get(UP))
@@ -461,7 +473,7 @@ public class Animator {
             }
         }
         //If I'm respawning, put me in the respawn spot and make me untargetable
-        if(respawnTimers.get(index) > 0){
+        if(respawnTimers.get(index) > 0 && players.get(index).getLives() > 0){
             me.setX(530);
             me.setY(100);
             me.setXVel(0);
@@ -559,7 +571,7 @@ public class Animator {
         if(l && !me.isLAttacking() && me.getLCooldown() <=0 && me.getLightning() == null
                 && !me.isHealing())
             chargingL.set(index, true);
-        else if(!l && me.getLCooldown() <=0 && me.getLightning() == null
+        else if(!l && me.getChargingLAttackStrength() > 0 && me.getLightning() == null
                 && !me.isHealing())
             releaseL.set(index, true);
     }
@@ -576,7 +588,6 @@ public class Animator {
         data+= characterSelected.get(2) + SSMClient.parseChar; //4
         data+= characterSelected.get(3) + SSMClient.parseChar; //5
         data+= packMice() + SSMClient.parseChar; //6
-        data+= justEnteredScreen + SSMClient.parseChar; //7
 
         data+= parseChar;
 
