@@ -4,7 +4,6 @@ import SSMCode.Player;
 import SSMCode.PlayerAttacks.*;
 import SSMEngines.util.Animator;
 import SSMEngines.util.Drawer;
-import SSMEngines.util.MapHandler;
 import SSMEngines.util.Poolkit;
 
 import java.awt.*;

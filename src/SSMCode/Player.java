@@ -128,16 +128,6 @@ public class Player extends Actor{
     /**
      *  Player Attack Lists (The player sends their attacks to the server and receives the other players' attack)
      */
-    private static List<List<Projectile>> projectiles;
-    private static List<List<Rocket>> rockets;
-    private static List<Punch> punches;
-    private static List<VerticalPunch> vPunches;
-    private static List<Lightning> lightningList;
-    private static List<GrowingLAttack> lAttacks;
-    private static List<Motorcycle> motoList;
-    private static List<Stick> sticks;
-    private static List<RainingCode> rainList;
-    private static List<List<Boomerang>> boomerangs;
 
     private ArrayList<Projectile> myProjectiles;
     private ArrayList<Rocket> myRockets;
@@ -235,17 +225,6 @@ public class Player extends Actor{
      * Initializing Methods
      */
     public void initializeAttacks(){
-        projectiles = Stream.generate(ArrayList<Projectile>::new).limit(4).collect(Collectors.toList());
-        rockets = Stream.generate(ArrayList<Rocket>::new).limit(4).collect(Collectors.toList());
-        punches = Stream.generate(()->(Punch)null).limit(4).collect(Collectors.toList());
-        vPunches = Stream.generate(()->(VerticalPunch)null).limit(4).collect(Collectors.toList());
-        lightningList = Stream.generate(()->(Lightning)null).limit(4).collect(Collectors.toList());
-        lAttacks = Stream.generate(()->(GrowingLAttack)null).limit(4).collect(Collectors.toList());
-        motoList = Stream.generate(()->(Motorcycle)null).limit(4).collect(Collectors.toList());
-        sticks = Stream.generate(()->(Stick)null).limit(4).collect(Collectors.toList());
-        rainList = Stream.generate(()->(RainingCode)null).limit(4).collect(Collectors.toList());
-        boomerangs = Stream.generate(ArrayList<Boomerang>::new).limit(4).collect(Collectors.toList());
-
         myProjectiles = new ArrayList<>();
         myRockets = new ArrayList<>();
         myPunch = null;
@@ -451,7 +430,6 @@ public class Player extends Actor{
         }
 
         animateAttacks((ArrayList<Player>) players);
-        addAttacksToLists();
     }
     public void animateBoss(){
         if(!isOnGround())
@@ -471,20 +449,6 @@ public class Player extends Actor{
             }
             bossAttackTimer = .1;
         }
-    }
-
-    public void addAttacksToLists(){
-        //Set your attacks to the static global arrayLists
-        projectiles.set(playerID,myProjectiles);
-        rockets.set(playerID,myRockets);
-        punches.set(playerID,myPunch);
-        vPunches.set(playerID,myVPunch);
-        lightningList.set(playerID,myLightning);
-        lAttacks.set(playerID,myLAttack);
-        motoList.set(playerID,myMoto);
-        sticks.set(playerID,myStick);
-        rainList.set(playerID,myRain);
-        boomerangs.set(playerID,myBoomerangs);
     }
 
     public void handleTimers(){
