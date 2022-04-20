@@ -67,10 +67,12 @@ public class Rocket extends Actor{
                 if(shooter == Player.LISON){
                     target.setStunDuration(.9);
                     target.setPercentage(target.getPercentage()-.5);
+                    target.setStunner(Player.LISON);
                 }
                 if(shooter == Player.NEEL){
                     target.setStunDuration(.9);
                     target.setPercentage(target.getPercentage()-.5);
+                    target.setStunner(Player.NEEL);
                 }
             }
         }

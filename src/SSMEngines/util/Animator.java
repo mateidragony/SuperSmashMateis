@@ -92,24 +92,24 @@ public class Animator {
 
     public void initArrayLists(){
         //Sent from client
-        players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
-        playerMoves = Stream.generate(() -> Stream.generate(() -> Boolean.FALSE).limit(8).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
-        mouseCoords = Stream.generate(() -> new Point(-100,-100)).limit(4).collect(Collectors.toList());
-        clicks = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        players = IntStream.range(0,numPlayers).mapToObj(Player::new).collect(Collectors.toList());
+        playerMoves = Stream.generate(() -> Stream.generate(() -> Boolean.FALSE).limit(8).collect(Collectors.toList())).limit(numPlayers).collect(Collectors.toList());
+        mouseCoords = Stream.generate(() -> new Point(-100,-100)).limit(numPlayers).collect(Collectors.toList());
+        clicks = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         //character select and end screen
-        characterSelected = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
-        playAgain = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        characterSelected = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
+        playAgain = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         //timers
-        deathTimer = Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList());
-        respawnTimers = Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList());
-        attackAnimationTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
-        playerTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(4).collect(Collectors.toList())).limit(4).collect(Collectors.toList());
+        deathTimer = Stream.generate(() -> (double)0).limit(numPlayers).collect(Collectors.toList());
+        respawnTimers = Stream.generate(() -> (double)0).limit(numPlayers).collect(Collectors.toList());
+        attackAnimationTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(3).collect(Collectors.toList())).limit(numPlayers).collect(Collectors.toList());
+        playerTimers = Stream.generate(() -> Stream.generate(() -> (double)0).limit(3).collect(Collectors.toList())).limit(numPlayers).collect(Collectors.toList());
         //in game
-        deathPoints = Stream.generate(Point::new).limit(4).collect(Collectors.toList());
-        timesJumped = Stream.generate(()->0).limit(4).collect(Collectors.toList());
-        chargingL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
-        releaseL = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
-        frameJumpedAt = Stream.generate(()->0).limit(4).collect(Collectors.toList());
+        deathPoints = Stream.generate(Point::new).limit(numPlayers).collect(Collectors.toList());
+        timesJumped = Stream.generate(()->0).limit(numPlayers).collect(Collectors.toList());
+        chargingL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
+        releaseL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
+        frameJumpedAt = Stream.generate(()->0).limit(numPlayers).collect(Collectors.toList());
     }
 
     public void animate(){
@@ -158,10 +158,16 @@ public class Animator {
                 platList = mapHandler.initPlats();
                 justEnteredScreen = true;
 
-                players.get(0).setX(140);
-                players.get(1).setX(900);
-                players.get(2).setX(393);
-                players.get(3).setX(646);
+                for(int i=0; i<players.size(); i++) {
+                    if(i==0)
+                        players.get(i).setX(140);
+                    else if(i==1)
+                        players.get(i).setX(900);
+                    else if(i==2)
+                        players.get(i).setX(393);
+                    else if(i==3)
+                        players.get(i).setX(646);
+                }
 
                 screenNumber++;
             }
@@ -175,7 +181,7 @@ public class Animator {
         int numPlayersDead = 0;
         for(Player p : players){
             if(p.getLives() <= 0){
-                p.setX(-1000); p.setY(-1000);
+                p.setX(100); p.setY(-1000);
                 p.setStunDuration(10000);
                 numPlayersDead++;
             }
@@ -213,7 +219,7 @@ public class Animator {
                 chargingL.set(i,false);
                 p.releaseLAttack();
                 releaseL.set(i,false);
-                attackAnimationTimers.get(2).set(i,0.25);
+                attackAnimationTimers.get(i).set(2,0.25);
             }
         }
         //animate the players
@@ -276,7 +282,7 @@ public class Animator {
     public void handlePlayerMovement(Player me, int index){
         //Movement only if you pressed the button to move, you're not on motorcycle
         //you're not dashing, and you aren't exceeding speed limit
-        if(playerMoves.get(index).get(LEFT)
+        if(playerMoves.get(index).get(LEFT) && !me.isStunned()
                 && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(-5);
             me.setDirection(Projectile.LEFT);
@@ -287,7 +293,7 @@ public class Animator {
             }
 
         }
-        if(playerMoves.get(index).get(RIGHT)
+        if(playerMoves.get(index).get(RIGHT) && !me.isStunned()
                 && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
             me.setXVel(5);
             me.setDirection(Projectile.RIGHT);
@@ -298,7 +304,8 @@ public class Animator {
             }
         }
         //When you press W
-        if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2){
+        if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2
+                && !me.isStunned()){
             //confusion inverts controls and not instant double jump
             if(!me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
                 if (!bossMode)
@@ -313,7 +320,8 @@ public class Animator {
             }
         }
         //When you press S
-        if(playerMoves.get(index).get(DOWN) && timesJumped.get(index)<2){
+        if(playerMoves.get(index).get(DOWN) && timesJumped.get(index)<2
+                && !me.isStunned()){
             //confusion inverts controls and not instant double jump
             if(me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
                 if (!bossMode)
@@ -336,9 +344,9 @@ public class Animator {
 
 
         //Just change the direction of player
-        if(playerMoves.get(index).get(LEFT))
+        if(playerMoves.get(index).get(LEFT) && !me.isStunned())
             me.setDirection(Projectile.LEFT);
-        if(playerMoves.get(index).get(RIGHT))
+        if(playerMoves.get(index).get(RIGHT) && !me.isStunned())
             me.setDirection(Projectile.RIGHT);
 
         //boss movement
@@ -583,11 +591,8 @@ public class Animator {
         //Game data
         data+= screenNumber + SSMClient.parseChar; //0
         data+= mapNumber + SSMClient.parseChar; //1
-        data+= characterSelected.get(0) + SSMClient.parseChar; //2
-        data+= characterSelected.get(1) + SSMClient.parseChar; //3
-        data+= characterSelected.get(2) + SSMClient.parseChar; //4
-        data+= characterSelected.get(3) + SSMClient.parseChar; //5
-        data+= packMice() + SSMClient.parseChar; //6
+        data+= packMice() + SSMClient.parseChar; //2
+        data+= packCharacterSelect() + SSMClient.parseChar; //3
 
         data+= parseChar;
 
@@ -633,4 +638,18 @@ public class Animator {
         }
         return mice;
     }
+    private String packCharacterSelect(){
+        String data = "";
+        for(boolean b : characterSelected)
+            data = data.concat(b + Projectile.arrayParseChar);
+        return data;
+    }
+    public static ArrayList<Boolean> unPackCharacterSelect(String s){
+        ArrayList<Boolean> bools = new ArrayList<>();
+        String[] data = s.split(Projectile.arrayParseChar);
+        for(String b : data)
+            bools.add(Boolean.parseBoolean(b));
+        return bools;
+    }
 }
+

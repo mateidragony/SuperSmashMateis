@@ -53,6 +53,7 @@ public class Stick extends GameObject{
                 target.setPercentage(target.getPercentage() + .5);
                 target.setXVel(0);
                 target.setStunDuration(strength);
+                target.setStunner(Player.KAUSHAL);
             }
         }
     }

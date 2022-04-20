@@ -51,8 +51,8 @@ public class Drawer {
         myMapHandler = new MapHandler();
         myMapHandler.initImages(new Poolkit());
 
-        players = IntStream.range(0,4).mapToObj(Player::new).collect(Collectors.toList());
-        characterSelected = Stream.generate(() -> Boolean.FALSE).limit(4).collect(Collectors.toList());
+        players = IntStream.range(0,playerMode).mapToObj(Player::new).collect(Collectors.toList());
+        characterSelected = Stream.generate(() -> Boolean.FALSE).limit(playerMode).collect(Collectors.toList());
     }
 
     public void draw(Graphics g, ImageObserver io, Point mouse){
@@ -230,11 +230,8 @@ public class Drawer {
         String[] gameData = data[0].split(SSMClient.parseChar);
         serverScreenNumber = Integer.parseInt(gameData[0]);
         mapNumber = Integer.parseInt(gameData[1]);
-        characterSelected.set(0, Boolean.parseBoolean(gameData[2]));
-        characterSelected.set(1, Boolean.parseBoolean(gameData[3]));
-        characterSelected.set(2, Boolean.parseBoolean(gameData[4]));
-        characterSelected.set(3, Boolean.parseBoolean(gameData[5]));
-        mice = Animator.unPackMice(gameData[6]);
+        mice = Animator.unPackMice(gameData[2]);
+        characterSelected = Animator.unPackCharacterSelect(gameData[3]);
 
         for(int i=1;i<data.length;i++){
             if(data[i].equals("null"))
