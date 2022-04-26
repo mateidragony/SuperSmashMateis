@@ -162,6 +162,11 @@ public class SSMClient extends AnimationPanel{
                 try {
                     dataOut.writeUTF(packInfo());
                     dataOut.flush();
+                    try{
+                        Thread.sleep(17);
+                    }catch(InterruptedException ex){
+                        ex.printStackTrace();
+                    }
                 } catch(IOException e){
                     e.printStackTrace();
                 }

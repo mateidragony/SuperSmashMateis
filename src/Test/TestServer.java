@@ -19,7 +19,7 @@ public class TestServer {
     public TestServer(){
         System.out.println("==== Game Server ====");
         numPlayers = 0;
-        this.maxPlayers = 1;
+        this.maxPlayers = 2;
 
         //ss.setReceiveBufferSize(2000);
         //ss.setReceiveBufferSize(2000);
@@ -57,19 +57,19 @@ public class TestServer {
             WriteToClient wtc = new WriteToClient(out,numPlayers);
 
             Thread readThread1 = new Thread(rfc);
-//            try{
-//                Thread.sleep(16);
-//            }catch(InterruptedException ex){
-//                ex.printStackTrace();
-//            }
+            try{
+                Thread.sleep(16);
+            }catch(InterruptedException ex){
+                ex.printStackTrace();
+            }
             readThread1.start();
 
             Thread writeThread1 = new Thread(wtc);
-//            try{
-//                Thread.sleep(16);
-//            }catch(InterruptedException ex){
-//                ex.printStackTrace();
-//            }
+            try{
+                Thread.sleep(16);
+            }catch(InterruptedException ex){
+                ex.printStackTrace();
+            }
             writeThread1.start();
         }
         System.out.println("All Connected!");
@@ -93,13 +93,13 @@ public class TestServer {
 
         if(p2data.length == 4) {
             if (Boolean.parseBoolean(p2data[0]))
-                p2y--;
+                p2y-=5;
             if (Boolean.parseBoolean(p2data[1]))
-                p2y++;
+                p2y+=5;
             if (Boolean.parseBoolean(p2data[2]))
-                p2y--;
+                p2x-=5;
             if (Boolean.parseBoolean(p2data[3]))
-                p2y++;
+                p2x+=5;
         }
 
         playerData = p1x+","+p1y+","+p2x+","+p2y+",";
@@ -149,11 +149,12 @@ public class TestServer {
                     dataOut.writeUTF(playerData);
                     dataOut.flush();
 
-                    //try{
-//                        Thread.sleep(17);
-//                    }catch(InterruptedException ex){
-//                        ex.printStackTrace();
-//                    }
+                    try{
+                        Thread.sleep(17);
+                    }catch(InterruptedException ex){
+                        ex.printStackTrace();
+                    }
+
                 } catch(IOException ex){
                     ex.printStackTrace();
                     System.exit(666);

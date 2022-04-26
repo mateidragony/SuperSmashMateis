@@ -161,11 +161,11 @@ public class TestClient extends JPanel implements KeyListener {
                 while(true){
                     dataOut.writeUTF(up+","+down+","+left+","+right+",");
                     dataOut.flush();
-//                    try{
-//                        Thread.sleep(17);
-//                    }catch(InterruptedException ex){
-//                        ex.printStackTrace();
-//                    }
+                    try{
+                        Thread.sleep(17);
+                    }catch(InterruptedException ex){
+                        ex.printStackTrace();
+                    }
                 }
 
             }catch(IOException ex){

@@ -84,9 +84,19 @@ public class SSMServer {
             WriteToClient wtc = new WriteToClient(numPlayers, out);
 
             Thread readThread1 = new Thread(rfc);
+            try{
+                Thread.sleep(17);
+            }catch(InterruptedException ex){
+                ex.printStackTrace();
+            }
             readThread1.start();
 
             Thread writeThread1 = new Thread(wtc);
+            try{
+                Thread.sleep(17);
+            }catch(InterruptedException ex){
+                ex.printStackTrace();
+            }
             writeThread1.start();
 
             numPlayers++;
@@ -141,6 +151,11 @@ public class SSMServer {
                     dataOut.writeBoolean(allConnected);
                     dataOut.writeUTF(animator.pack());
                     dataOut.flush();
+                    try{
+                        Thread.sleep(17);
+                    }catch(InterruptedException ex){
+                        ex.printStackTrace();
+                    }
                 } catch(IOException ex){
                     ex.printStackTrace();
                     System.exit(666);
