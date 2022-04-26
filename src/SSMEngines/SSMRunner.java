@@ -18,6 +18,7 @@ public class SSMRunner {
         startAnimation();
         myFrame.setSize(world.getPreferredSize());
         myFrame.setVisible(true);
+        myFrame.setResizable(false);
 
     }
 
@@ -32,7 +33,6 @@ public class SSMRunner {
     {
         javax.swing.Timer t = new javax.swing.Timer(1000/FPS, e -> {
            myFrame.getComponent(0).repaint();
-            myFrame.setSize(myFrame.getComponent(0).getPreferredSize());
         });
         t.start();
     }

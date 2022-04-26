@@ -72,8 +72,10 @@ public class SSMServer {
             InputStream inStream = s.getInputStream();
             OutputStream outStream = s.getOutputStream();
 
-            ObjectOutputStream out = new ObjectOutputStream(outStream);
-            ObjectInputStream in = new ObjectInputStream(inStream);
+            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(outStream));
+            System.out.println("Server oos made");
+            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(inStream));
+            System.out.println("Server ois made");
 
             out.writeInt(numPlayers);
             System.out.println(numPlayers+1+" player(s) are connected");

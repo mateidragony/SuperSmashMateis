@@ -63,6 +63,7 @@ public class Animator {
     private List<Boolean> releaseL;
     private boolean bossMode; //if any player is boss, bossMode = true
     private List<Integer> frameJumpedAt; //To prevent instant double jump bug
+    private Player dummy;
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
@@ -110,6 +111,9 @@ public class Animator {
         chargingL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         releaseL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         frameJumpedAt = Stream.generate(()->0).limit(numPlayers).collect(Collectors.toList());
+
+        if(numPlayers == 1)
+            dummy = new Player(500,100,60,90,1);
     }
 
     public void animate(){
@@ -142,7 +146,7 @@ public class Animator {
     }
     public void animateMapSelect(){
         //to fix bug where if you click the ready button it also thinks you clicked a map
-        if(frameNumber-frameEnteredMapSelect > 10) {
+        if(frameNumber-frameEnteredMapSelect > 100) {
             //checks to see if any player clicked on a map
             for (int i = 0; i < clicks.size(); i++) {
                 boolean click = clicks.get(i);
@@ -237,12 +241,14 @@ public class Animator {
             handleDeath(p,i);
             handleAttackTimers(p,i);
         }
+        //handle the dummy
+        if(numPlayers == 1)
+            handleDummy();
 
         if(startGameTimer > 0)
             startGameTimer -= 1.0/80;
         else
             startGameTimer = 0;
-
     }
 
 
@@ -583,6 +589,28 @@ public class Animator {
                 && !me.isHealing())
             releaseL.set(index, true);
     }
+    public void handleDummy(){
+        if(dummy != null) {
+            Rectangle screenBounds = new Rectangle(-200, -200, width + 200, height + 400);
+            if (!screenBounds.intersects(dummy.getHitBox())) {
+                dummy.setX(500);
+                dummy.setY(0);
+                dummy.setXVel(0);
+                dummy.setYVel(0);
+            }
+
+
+            ArrayList<Player> justDummy = new ArrayList<>();
+            justDummy.add(dummy);
+            for(Platform plat : platList)
+                plat.animate(justDummy);
+            players.get(0).animateAttacks(justDummy);
+            dummy.animate();
+
+            if (playerMoves.get(0).get(P))
+                dummy.setPercentage(0);
+        }
+    }
 
     public static String parseChar = ";";
 
@@ -603,6 +631,12 @@ public class Animator {
             else
                 data = data.concat(p.pack() + parseChar);
         }
+
+        //dummy
+        if(dummy == null)
+            data += "null" + parseChar;
+        else
+            data+= dummy.pack() + parseChar;
 
         return data;
     }

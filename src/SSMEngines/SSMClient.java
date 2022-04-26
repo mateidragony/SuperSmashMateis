@@ -101,7 +101,9 @@ public class SSMClient extends AnimationPanel{
             OutputStream outStream = socket.getOutputStream();
             
             ObjectOutputStream out = new ObjectOutputStream(outStream);
+            System.out.println("oos made");
             ObjectInputStream in = new ObjectInputStream(inStream);
+            System.out.println("ois made");
 
             playerID = in.readInt();
             System.out.println("You are player #"+playerID);

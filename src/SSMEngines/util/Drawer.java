@@ -22,6 +22,7 @@ public class Drawer {
 
     private final List<Player> players;
     private ArrayList<Platform> platList;
+    private Player dummy;
 
     private int serverScreenNumber;
     private Point mouse;
@@ -150,6 +151,12 @@ public class Drawer {
         for(Platform p : platList)
             p.draw(g,io);
 
+        if(dummy != null){
+            dummy.draw(g,io);
+            g.setColor(Color.white);
+            g.drawString("Percentage: "+df.format(dummy.getPercentage()),250,100);
+        }
+
         for(Player p : players) {
             p.draw(g, io);
             p.drawAttacks(g,io);
@@ -233,12 +240,17 @@ public class Drawer {
         mice = Animator.unPackMice(gameData[2]);
         characterSelected = Animator.unPackCharacterSelect(gameData[3]);
 
-        for(int i=1;i<data.length;i++){
+        for(int i=1;i<data.length-1;i++){
             if(data[i].equals("null"))
                 players.set(i-1,null);
             else
                 players.set(i-1,Player.unPack(data[i]));
         }
+
+        if(data[data.length-1].equals("null"))
+            dummy = null;
+        else
+            dummy = Player.unPack(data[data.length-1]);
 
     }
 
