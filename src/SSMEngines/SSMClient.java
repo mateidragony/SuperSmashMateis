@@ -23,6 +23,8 @@ public class SSMClient extends AnimationPanel{
     private int screenNumber;
     private boolean allConnected;
     private String connecting;
+    private String cheatCode;
+    private String keyTyped;
 
     public SSMClient() {
         super("Super Smash Mateis");
@@ -32,7 +34,7 @@ public class SSMClient extends AnimationPanel{
 
         drawer = new Drawer(playerID,playerMode);
         connecting = "to Connect ";
-
+        cheatCode = " ";
         screenNumber = Animator.INTRO_SCREEN;
     }
 
@@ -198,8 +200,10 @@ public class SSMClient extends AnimationPanel{
         str += mouseX + parseChar; //9
         str += mouseY + parseChar; //10
         str += mousePressed + parseChar; //11
-
         str += playerName + parseChar; //12
+        str += keyTyped + parseChar; //13
+        keyTyped = " ";
+
 
         return str;
     }
@@ -257,6 +261,10 @@ public class SSMClient extends AnimationPanel{
 
     public void keyTyped(KeyEvent e) {
         char c = e.getKeyChar();
+        cheatCode+=c;
+        if(cheatCode.length() > 999)
+            cheatCode = " ";
+        keyTyped = ""+c;
     }
     public void keyPressed(KeyEvent e) {
         int v = e.getKeyCode();

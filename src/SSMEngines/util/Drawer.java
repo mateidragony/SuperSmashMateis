@@ -23,8 +23,9 @@ public class Drawer {
     private final List<Player> players;
     private ArrayList<Platform> platList;
     private Player dummy;
-    private double startGameTimer;
+    private double startGameTimer, gameTimer;
     private double jCooldown, kCooldown;
+    private boolean bossMode;
 
     private int serverScreenNumber;
     private Point mouse;
@@ -159,13 +160,25 @@ public class Drawer {
             p.draw(g, io);
             p.drawAttacks(g,io);
         }
+        //draw the fire if boss mode
+        if(bossMode) {
+            g.drawImage(fireFG,0,0,width,height,io);
+        }
         //draw the player's character, name, lives, and percentage
         drawBottomInGameScreen(g,io);
         //draws the cooldowns for each of your abilities
         drawAbilityBar(g);
         //draw the 3,2,1,go
         drawStartingGame(g,io);
-
+        //draw the game timer
+        g.setColor(Color.gray);
+        g.fillRect(875,10,125,40);
+        g.setColor(Color.black);
+        g.setFont(new Font("Sans Serif",Font.BOLD,30));
+        if(gameTimer %60 < 10)
+            g.drawString(""+(int)(gameTimer/60)+" : 0"+(int)(gameTimer%60), 900,40);
+        else
+            g.drawString(""+(int)(gameTimer/60)+" : "+(int)(gameTimer%60), 900,40);
     }
 
 
@@ -350,6 +363,8 @@ public class Drawer {
         startGameTimer = Double.parseDouble(gameData[4]);
         jCooldown = Animator.unPackAttackCooldowns(gameData[5]).get(playerID);
         kCooldown = Animator.unPackAttackCooldowns(gameData[6]).get(playerID);
+        gameTimer = Double.parseDouble(gameData[7]);
+        bossMode = Boolean.parseBoolean(gameData[8]);
 
         for(int i=1;i<data.length-1;i++){
             if(data[i].equals("null"))
@@ -371,7 +386,7 @@ public class Drawer {
     private static Image img3, img2, img1, imgGo;
     private static Image characterSelectReadyButton;
     private static Image characterSelectReady;
-    private static Image life;
+    private static Image life, fireFG;
 
     public static void initImages(Poolkit toolkit){
         miceImgs = new ArrayList<>();
@@ -390,6 +405,7 @@ public class Drawer {
         imgGo = toolkit.getImage("SSMImages/3-2-1/Go.png");
 
         life = toolkit.getImage("SSMImages/heart.png");
+        fireFG = toolkit.getImage("SSMImages/fire_fg.png");
     }
 
 

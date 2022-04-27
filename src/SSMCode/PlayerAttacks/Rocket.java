@@ -50,7 +50,7 @@ public class Rocket extends Actor{
     
     public void animateMovement(){
         if(shooter == Player.NEEL)
-            setXVel(20*dir);
+            setXVel(15*dir);
         
         setX(getX()+getXVel());
     }
@@ -70,7 +70,7 @@ public class Rocket extends Actor{
                     target.setStunner(Player.LISON);
                 }
                 if(shooter == Player.NEEL){
-                    target.setStunDuration(.9);
+                    target.setStunDuration(.75);
                     target.setPercentage(target.getPercentage()-.5);
                     target.setStunner(Player.NEEL);
                 }

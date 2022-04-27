@@ -40,7 +40,6 @@ public class Animator {
     //------------------------------------------------------------
     //Instance Bariables
     //------------------------------------------------------------
-
     private int frameNumber;
     private final int numPlayers;
     private int screenNumber;
@@ -64,6 +63,7 @@ public class Animator {
     private boolean bossMode; //if any player is boss, bossMode = true
     private List<Integer> frameJumpedAt; //To prevent instant double jump bug
     private Player dummy;
+    private List<String> cheatCodes;
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
@@ -112,6 +112,7 @@ public class Animator {
         chargingL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         releaseL = Stream.generate(() -> Boolean.FALSE).limit(numPlayers).collect(Collectors.toList());
         frameJumpedAt = Stream.generate(()->0).limit(numPlayers).collect(Collectors.toList());
+        cheatCodes = Stream.generate(()->"").limit(numPlayers).collect(Collectors.toList());
 
         if(numPlayers == 1)
             dummy = new Player(500,100,60,90,1);
@@ -247,6 +248,7 @@ public class Animator {
             handlePlayerImages(p,i);
             handleDeath(p,i);
             handleAttackTimers(p,i);
+            handleCheatCodes(i);
         }
         //handle the dummy
         if(numPlayers == 1)
@@ -374,7 +376,7 @@ public class Animator {
     }
     public void handleGravity(Player me){
         //if an enemy is the boss, slow everything down
-        if(bossMode){
+        if(bossMode && !me.isBoss()){
             Actor.GRAVITY = 0.1;
             if(me.getXVel() > 1.7 || me.getXVel() < -1.7)
                 me.setXVel(me.getXVel()/3);
@@ -551,10 +553,12 @@ public class Animator {
                 //j animation
                 attackAnimationTimers.get(index).set(0,0.25);
                 //spock and emi and obama have a longer cooldown
-                if (me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.EMI)
+                if (me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.EMI)
                     playerTimers.get(index).set(0,0.5);
                 if (me.getCharacter() == PlayerOld.OBAMA)
                     playerTimers.get(index).set(0,1.0);
+                if(me.getCharacter() == Player.NEEL)
+                    playerTimers.get(index).set(0,0.32);
             }
             //K attack, cooldown = 0
             if (k && playerTimers.get(index).get(1) == 0) {
@@ -572,12 +576,15 @@ public class Animator {
                 else if (me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.LAWRENCE) {
                     playerTimers.get(index).set(1,8.0); //spock and lawrence have cooldown of 8
                     attackAnimationTimers.get(index).set(1,0.6); //k animation
-                } else if (me.getCharacter() == PlayerOld.LISON)
+                }
+                else if (me.getCharacter() == PlayerOld.LISON)
                     playerTimers.get(index).set(1,3.0); //Lison has cooldown of 3
                 else if (me.getCharacter() == PlayerOld.OBAMA) {
                     playerTimers.get(index).set(1,.3); //obama has cooldown of .3
                     attackAnimationTimers.get(index).set(1,0.4);
                 }
+                else if(me.getCharacter() == Player.NEEL)
+                    playerTimers.get(index).set(1,2.0); //Neel has a cooldown of 2
             }
         }
         //L attacks
@@ -610,6 +617,44 @@ public class Animator {
                 dummy.setPercentage(0);
         }
     }
+    public void handleCheatCodes(int playerID){
+        String cheatCode = cheatCodes.get(playerID).replaceAll(" ","");
+
+        //increase your player number
+        if(cheatCode.contains("increase")) {
+            int character = players.get(playerID).getCharacter();
+            if(character == Player.DUMMY - 1)
+                players.get(playerID).setCharacter(0);
+            else
+                players.get(playerID).setCharacter(character + 1);
+            cheatCodes.set(playerID,"");
+        }
+        //decrease your player number
+        if(cheatCode.contains("decrease")) {
+            int character = players.get(playerID).getCharacter();
+            if(character == 0)
+                players.get(playerID).setCharacter(Player.DUMMY-1);
+            else
+                players.get(playerID).setCharacter(character - 1);
+            cheatCodes.set(playerID,"");
+        }
+        //increase percentage
+        if(cheatCode.contains("kill")) {
+            players.get(playerID).setPercentage(players.get(playerID).getPercentage()+100);
+            cheatCodes.set(playerID,"");
+        }
+        //Boss code and is Spock
+        if(cheatCode.contains(bossCode) && players.get(playerID).getCharacter() == Player.SPOCK){
+            if(!players.get(playerID).isBoss())
+                players.get(playerID).setIsBoss(true);
+            else {
+                players.get(playerID).setIsBoss(false);
+                players.get(playerID).setSize(60,90);
+            }
+            cheatCodes.set(playerID,"");
+        }
+
+    }
 
     public static String parseChar = ";";
 
@@ -623,6 +668,8 @@ public class Animator {
         data+= startGameTimer + SSMClient.parseChar; //4
         data+= packJAttackCooldowns() + SSMClient.parseChar; //5
         data+= packKAttackCooldowns() + SSMClient.parseChar; //6
+        data+= gameTimer + SSMClient.parseChar; //7
+        data+= bossMode + SSMClient.parseChar; //8
 
         data+= parseChar;
 
@@ -656,6 +703,8 @@ public class Animator {
         clicks.set(pID, Boolean.parseBoolean(strData[11]));
 
         players.get(pID).setPlayerName(strData[12]);
+
+        cheatCodes.set(pID, cheatCodes.get(pID)+strData[13]);
     }
 
     private String packMice(){

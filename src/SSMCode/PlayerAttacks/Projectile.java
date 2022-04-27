@@ -77,7 +77,7 @@ public class Projectile extends Actor{
             setXVel(8*dir);
         //else if I am Neel,
         else if(shooter == Player.NEEL)
-            setXVel(20*dir);
+            setXVel(15*dir);
 
         //move based on speed
         setX(getX()+getXVel());

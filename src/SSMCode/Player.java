@@ -424,6 +424,8 @@ public class Player extends Actor{
         setYVel(getYVel()*.75);
         setXVel(getXVel()*.75);
 
+        setSize(180,270);
+
         bossAttackTimer -= 1.0/60;
 
         if(bossAttackTimer < 0){
@@ -517,7 +519,7 @@ public class Player extends Actor{
             Projectile p = myProjectiles.get(i);
             if(p!=null){
                 //if I am spock my J Attack switches direction when I move
-                if(character == SPOCK){
+                if(character == SPOCK && !isBoss){
                     p.setDirection(direction);
                     p.setY(getY());
                 }
@@ -541,6 +543,8 @@ public class Player extends Actor{
                 r.animateDamage(players);
 
                 if(r.outOfBounds())
+                    myRockets.remove(i);
+                if(r.getXVel() == 0)
                     myRockets.remove(i);
             }else
                 myRockets.remove(i);
