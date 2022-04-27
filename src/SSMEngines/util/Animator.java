@@ -89,6 +89,7 @@ public class Animator {
         numPlayers = maxPlayers;
         initArrayLists();
         Player.initImages();
+        startGameTimer = 5;
     }
 
     public void initArrayLists(){
@@ -230,11 +231,17 @@ public class Animator {
         for(int i=0; i<players.size(); i++) {
             Player p = players.get(i);
 
-            handlePlayerInputs(p, i);
+            //player movement and attack inputs
+            if(startGameTimer == 0) {
+                handlePlayerInputs(p, i);
+                handlePlayerMovement(p, i);
+            }
 
-            handlePlayerMovement(p,i);
             handleGravity(p);
             p.animate(players);
+            //fixes the bug of double animation in single player
+            if(dummy == null)
+                p.animateAttacks((ArrayList<Player>) players);
             
             handleWalkingAnimation(p,i);
             handlePlayerImages(p,i);
@@ -464,14 +471,6 @@ public class Animator {
     }
     public void handleDeath(Player me, int index){
         Rectangle screenBounds = new Rectangle(-200,-200,width+200,height+400);
-//        if(dummy != null){
-//            if(!screenBounds.intersects(dummy.getHitBox())){
-//                dummy.setX(500);
-//                dummy.setY(0);
-//                dummy.setXVel(0);
-//                dummy.setYVel(0);
-//            }
-//        }
 
         //if I'm not on the map, I died
         if(!screenBounds.intersects(me.getHitBox())) {
@@ -605,7 +604,7 @@ public class Animator {
             for(Platform plat : platList)
                 plat.animate(justDummy);
             players.get(0).animateAttacks(justDummy);
-            dummy.animate();
+            dummy.animate(justDummy);
 
             if (playerMoves.get(0).get(P))
                 dummy.setPercentage(0);
@@ -621,6 +620,9 @@ public class Animator {
         data+= mapNumber + SSMClient.parseChar; //1
         data+= packMice() + SSMClient.parseChar; //2
         data+= packCharacterSelect() + SSMClient.parseChar; //3
+        data+= startGameTimer + SSMClient.parseChar; //4
+        data+= packJAttackCooldowns() + SSMClient.parseChar; //5
+        data+= packKAttackCooldowns() + SSMClient.parseChar; //6
 
         data+= parseChar;
 
@@ -685,5 +687,25 @@ public class Animator {
             bools.add(Boolean.parseBoolean(b));
         return bools;
     }
+    public String packJAttackCooldowns(){
+        StringBuilder data = new StringBuilder();
+        for(List<Double> d : playerTimers)
+            data.append(d.get(0)).append(Projectile.arrayParseChar);
+        return data.toString();
+    }
+    public static ArrayList<Double> unPackAttackCooldowns(String s){
+        ArrayList<Double> data = new ArrayList<>();
+        String[] cooldowns = s.split(Projectile.arrayParseChar);
+        for(String str : cooldowns)
+            data.add(Double.parseDouble(str));
+        return data;
+    }
+    public String packKAttackCooldowns(){
+        StringBuilder data = new StringBuilder();
+        for(List<Double> d : playerTimers)
+            data.append(d.get(1)).append(Projectile.arrayParseChar);
+        return data.toString();
+    }
+
 }
 

@@ -128,7 +128,6 @@ public class Player extends Actor{
     /**
      *  Player Attack Lists (The player sends their attacks to the server and receives the other players' attack)
      */
-
     private ArrayList<Projectile> myProjectiles;
     private ArrayList<Rocket> myRockets;
     private Punch myPunch;
@@ -220,6 +219,8 @@ public class Player extends Actor{
     public void setNadoTimer(double c){nadoTimer = c;}
     public void setStunner(int c){stunner = c;}
     public void setHealing(boolean c){isHealing = c;}
+    public void setFlameDrawTimer(double c){flameDrawTimer = c;}
+    public void setStunDrawTimer(double c){stunDrawTimer = c;}
 
     /**
      * Initializing Methods
@@ -340,8 +341,6 @@ public class Player extends Actor{
         if(getX()>1050)
             g.fillPolygon(triangle2XPoints,triangleYPoints,3);
 
-        handleTimers();
-
         Image myCurrentImage;
 
         if(character==LISON && lAttackTimer>0){
@@ -373,11 +372,6 @@ public class Player extends Actor{
         }
 
         if(isStunned()){
-            if(stunDrawTimer > 0)
-                stunDrawTimer -= 1.0/60;
-            else
-                stunDrawTimer = .7;
-
             if(stunner == PlayerOld.LISON || stunner == PlayerOld.NEEL){
                 g.drawImage(miscImages.get(3), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
             }
@@ -389,11 +383,6 @@ public class Player extends Actor{
             }
         }
         if(isFlaming()){
-            if(flameDrawTimer > 0)
-                flameDrawTimer -= 1.0/60;
-            else
-                flameDrawTimer = .7;
-
             if(flameDrawTimer > 0.35)
                 g.drawImage(miscImages.get(6),(int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
             else
@@ -428,8 +417,6 @@ public class Player extends Actor{
             else
                 setX(getX()-2);
         }
-
-        animateAttacks((ArrayList<Player>) players);
     }
     public void animateBoss(){
         if(!isOnGround())
@@ -476,6 +463,16 @@ public class Player extends Actor{
             lAttackCooldown -=1.0/60;
         else
             lAttackCooldown = 0;
+
+        if(flameDrawTimer > 0)
+            flameDrawTimer -= 1.0/60;
+        else
+            flameDrawTimer = .7;
+
+        if(stunDrawTimer > 0)
+            stunDrawTimer -= 1.0/60;
+        else
+            stunDrawTimer = .7;
 
         if(lAttackTimer > 0)
             lAttackTimer -= 1.0/60;
@@ -530,6 +527,8 @@ public class Player extends Actor{
                 if(p.isNull())
                     myProjectiles.remove(i);
                 if(p.outOfBounds())
+                    myProjectiles.remove(i);
+                if(p.getXVel() == 0)
                     myProjectiles.remove(i);
             }else
                 myProjectiles.remove(i);
@@ -629,7 +628,13 @@ public class Player extends Actor{
             }else
                 myBoomerangs.remove(i);
         }
-
+        //Kaushal's healing
+        if(isHealing){
+            if(getPercentage() > 0)
+                setPercentage(getPercentage()-0.3);
+            if(getXVel() < -3 || getXVel() > 3)
+                isHealing = false;
+        }
         //Animate Matei's Minigun, Lison's tornado, and Salome's dash
         animateLAttacks(players);
     }
@@ -902,6 +907,9 @@ public class Player extends Actor{
         packedPlayersInfo += getFlameDuration() + SSMClient.parseChar; //17
         packedPlayersInfo += chargingLAttackStrength + SSMClient.parseChar; //18
         packedPlayersInfo += stunner + SSMClient.parseChar; //19
+        packedPlayersInfo += stunDrawTimer + SSMClient.parseChar; //20
+        packedPlayersInfo += flameDrawTimer + SSMClient.parseChar; //21
+        packedPlayersInfo += lAttackCooldown + SSMClient.parseChar; //22
 
         packedPlayersInfo += parseChar;
 
@@ -944,6 +952,9 @@ public class Player extends Actor{
         player.setFlameDuration(Double.parseDouble(data[17]));
         player.setChargingLAttackStrength(Double.parseDouble(data[18]));
         player.setStunner(Integer.parseInt(data[19]));
+        player.setStunDrawTimer(Double.parseDouble(data[20]));
+        player.setFlameDrawTimer(Double.parseDouble(data[21]));
+        player.setLCooldown(Double.parseDouble(data[22]));
 
         player.setPList(Projectile.unPackArray(playerData[1]));
         player.setRocketList(Rocket.unPackArray(playerData[2]));

@@ -59,8 +59,12 @@ public class SuperSmashMateis
             //We are coding a method within the ActionListener object during it's construction!
             public void actionPerformed(ActionEvent e) 
             {
-                myFrame.getComponent(0).repaint();
-                myFrame.setSize(myFrame.getComponent(0).getPreferredSize());
+                try {
+                    myFrame.getComponent(0).repaint();
+                    myFrame.setSize(myFrame.getComponent(0).getPreferredSize());
+                } catch (NullPointerException ex){
+
+                }
             }
         }); //--end of construction of Timer--
         t.start();
