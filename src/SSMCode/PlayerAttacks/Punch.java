@@ -106,11 +106,11 @@ public class Punch extends GameObject{
                     && canHurt) {
                 if (shooter == Player.UMER) {
                     target.setPercentage(target.getPercentage() + 1.5);
-                    target.setXVel(2.25 * (0.5 + 1.5 * target.getPercentage() / 20) * dir);
+                    target.setDamageXVel(2.25 * (0.5 + 1.5 * target.getPercentage() / 20) * dir);
                     target.setYVel(.75 * (target.getYVel() - 1.5 - 2 * target.getPercentage() / 50));
                 } else {
                     target.setPercentage(target.getPercentage() + 1);
-                    target.setXVel(1.5 * (0.5 + 1.5 * target.getPercentage() / 20) * dir);
+                    target.setDamageXVel(1.5 * (0.5 + 1.5 * target.getPercentage() / 20) * dir);
                     target.setYVel(.5 * (target.getYVel() - 1.5 - 2 * target.getPercentage() / 50));
                 }
             }

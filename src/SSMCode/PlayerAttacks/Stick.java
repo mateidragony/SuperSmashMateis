@@ -51,8 +51,8 @@ public class Stick extends GameObject{
                     && !team.equals(target.getTeam())
                     && !target.isUntargetable()) {
                 target.setPercentage(target.getPercentage() + .5);
-                target.setXVel(0);
-                target.setStunDuration(strength);
+                target.setDamageXVel(0);
+                target.setStunDuration(strength*1.5);
                 target.setStunner(Player.KAUSHAL);
             }
         }

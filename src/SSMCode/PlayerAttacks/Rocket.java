@@ -61,7 +61,7 @@ public class Rocket extends Actor{
                     && !target.isUntargetable())
             {    
                 target.setPercentage(target.getPercentage()+1.5);
-                target.setXVel((2.5+1*target.getPercentage()/25)*dir);
+                target.setDamageXVel((2.5+1*target.getPercentage()/25)*dir);
                 target.setYVel(target.getYVel()-0.5*(1.5+target.getPercentage()/100));
                 
                 if(shooter == Player.LISON){

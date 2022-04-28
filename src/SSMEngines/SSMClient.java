@@ -3,6 +3,7 @@ package SSMEngines;
 import SSMCode.Player;
 import SSMCode.PlayerAttacks.*;
 import SSMEngines.util.Animator;
+import SSMEngines.util.AudioUtility;
 import SSMEngines.util.Drawer;
 import SSMEngines.util.Poolkit;
 
@@ -12,6 +13,7 @@ import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
 import javax.imageio.ImageIO;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 
 public class SSMClient extends AnimationPanel{
@@ -20,6 +22,7 @@ public class SSMClient extends AnimationPanel{
     private final int width = AnimationPanel.width;
     private final int height = AnimationPanel.height;
 
+    private boolean startedIntroSong;
     private int screenNumber;
     private boolean allConnected;
     private String connecting;
@@ -42,6 +45,11 @@ public class SSMClient extends AnimationPanel{
     public void renderFrame(Graphics g){
 
         if(screenNumber == Animator.INTRO_SCREEN){
+            if(!startedIntroSong){
+                drawer.playSFXClip(IntroMusic);
+                startedIntroSong = true;
+            }
+
             g.setColor(Color.black);
             g.fillRect(0,0,width,height);
             g.drawImage(introScreen, 0,0,width,height,this);
@@ -76,7 +84,8 @@ public class SSMClient extends AnimationPanel{
                     screenNumber++;
             }
         }else{
-            drawer.draw(g,this, new Point(mouseX,mouseY));
+            IntroMusic.stop();
+            drawer.draw(g,this, new Point(mouseX,mouseY), mousePressed);
         }
     }
 
@@ -325,6 +334,7 @@ public class SSMClient extends AnimationPanel{
     //------------------------------------------------------------
 
     private Image introScreen;
+    Clip IntroMusic;
 
     public void initGraphics(){
         Poolkit poolkit = new Poolkit();
@@ -339,6 +349,8 @@ public class SSMClient extends AnimationPanel{
         Projectile.initImages();
         Boomerang.initImages(poolkit);
         RainingCode.initImage(poolkit);
+
+        IntroMusic = AudioUtility.loadClip("SSMMusic/introSong.wav");
 
         try {
             introScreen = ImageIO.read(new File("SSMImages/introScreen.png"));

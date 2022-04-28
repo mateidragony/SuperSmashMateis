@@ -95,10 +95,10 @@ public class Projectile extends Actor{
                 isNull = true;
                 
                 if(getW() >= 10){
-                    target.setXVel((1.5+3*target.getPercentage()/25)*dir);
+                    target.setDamageXVel((1.5+3*target.getPercentage()/25)*dir);
                     target.setYVel((target.getYVel()-1.5-2*target.getPercentage()/75));
                 } else{
-                    target.setXVel(.75*(1.5+3*target.getPercentage()/25)*dir);
+                    target.setDamageXVel(.75*(1.5+3*target.getPercentage()/25)*dir);
                     target.setYVel(.85*(target.getYVel()-2.5));
                 }
                    

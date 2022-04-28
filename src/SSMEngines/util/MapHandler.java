@@ -5,11 +5,6 @@
  */
 package SSMEngines.util;
 
-/**
- *
- * @author 22cloteauxm
- */
-
 import SSMCode.Platform;
 
 import java.util.ArrayList;
@@ -52,7 +47,7 @@ public class MapHandler {
         int imageSize = 150;
         for(int i=0; i<mapThumbnails.size();i++){
             imageRectList.add(new Rectangle((int)(10+(i%2)*(imageSize*1.6+10)-5),
-                    10-5+((int)(imageSize)+10)*(i/2),
+                    10-5+(imageSize +10)*(i/2),
                     (int)(imageSize*1.6+10),(int)(imageSize)+10));
         }
         for(Rectangle r: imageRectList){
@@ -70,7 +65,7 @@ public class MapHandler {
                 g2d.setFont(new Font("Sans Serif", Font.BOLD, 60));
                 g2d.setColor(Color.WHITE);
                 g2d.drawString(mapNames.get(i), 20,490);
-                g2d.drawImage(mapThumbnails.get(i), 20,100,(int)(imageSize*2*1.6),(int)(imageSize*2),io);
+                g2d.drawImage(mapThumbnails.get(i), 20,100,(int)(imageSize*2*1.6), imageSize*2,io);
             }
         }
     }

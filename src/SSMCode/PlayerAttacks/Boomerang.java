@@ -78,7 +78,7 @@ public class Boomerang extends Actor{
             setXVel(getXVel()*-1);
             dir*=-1;
         }
-        
+
         setX(getX()+getXVel());
     }
     
@@ -89,7 +89,7 @@ public class Boomerang extends Actor{
                     && !target.isUntargetable())
             {    
                 target.setPercentage(target.getPercentage()+1.5);
-                target.setXVel((2.5+1*target.getPercentage()/25)*dir);
+                target.setDamageXVel((2.5+1*target.getPercentage()/25)*dir);
                 target.setYVel(target.getYVel()-0.5*(1.5+target.getPercentage()/100));
             }
         }

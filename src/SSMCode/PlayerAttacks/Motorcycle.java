@@ -50,7 +50,7 @@ public class Motorcycle extends GameObject{
                     && !target.isUntargetable()
                     && !isNull) {
                 target.setPercentage(target.getPercentage() + 0.22);
-                target.setXVel((2.5 + 4 * target.getPercentage() / 25) * dir);
+                target.setDamageXVel((2.5 + 4 * target.getPercentage() / 25) * dir);
             }
         }
     }

@@ -63,7 +63,7 @@ public class GrowingLAttack extends Actor{
                     && !target.isUntargetable())
             {
                 target.setPercentage(target.getPercentage()+damage);
-                target.setXVel(damage*(2.5+target.getPercentage()/15)*dir);
+                target.setDamageXVel(damage*(2.5+target.getPercentage()/15)*dir);
                 target.setYVel(target.getYVel()-damage*0.9*(0.5*(1.5+target.getPercentage()/100)));
             }
         }

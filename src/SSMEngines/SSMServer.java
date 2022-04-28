@@ -13,6 +13,7 @@ public class SSMServer {
     private int numPlayers;
     private final int maxPlayers;
 
+    private boolean dc;
     private boolean allConnected;
 
     Animator animator;
@@ -129,7 +130,7 @@ public class SSMServer {
 
                 } catch(IOException ex){
                     ex.printStackTrace();
-                    System.exit(666);
+                    dc = true;
                 }
             }
 
@@ -149,7 +150,7 @@ public class SSMServer {
             while(true){
                 try {
                     dataOut.writeBoolean(allConnected);
-                    dataOut.writeUTF(animator.pack());
+                    dataOut.writeUTF(animator.pack() + dc + SSMClient.parseChar);
                     dataOut.flush();
                     try{
                         Thread.sleep(17);
@@ -158,7 +159,7 @@ public class SSMServer {
                     }
                 } catch(IOException ex){
                     ex.printStackTrace();
-                    System.exit(666);
+                    dc = true;
                 }
             }
 

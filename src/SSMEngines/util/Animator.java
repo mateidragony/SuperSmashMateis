@@ -51,7 +51,9 @@ public class Animator {
     private List<Double> respawnTimers;
     private List<List<Double>> attackAnimationTimers;//J=0, K=1, L=2
     private List<List<Double>> playerTimers;//J=0, K=1, Walking=2 (J and K are attack cooldowns)
-    private double gameTimer, startGameTimer;
+    private double gameTimer; //timer for the game clock
+    private double startGameTimer; //timer for 3,2,1,Go!
+    private double endGameTimer = -1; //timer for the GAME! image at end of game
 
     //in game variables
     private List<Player> players;
@@ -64,6 +66,7 @@ public class Animator {
     private List<Integer> frameJumpedAt; //To prevent instant double jump bug
     private Player dummy;
     private List<String> cheatCodes;
+    private String winner;
 
     //Sent from client (Player inputs)
     private List<List<Boolean>> playerMoves;
@@ -127,6 +130,8 @@ public class Animator {
             animateMapSelect();
         else if(screenNumber == IN_GAME_SCREEN)
             animateGame();
+        else if(screenNumber == END_GAME_SCREEN)
+            animatePlayAgain();
     }
 
     public void animateCharacterSelect(){
@@ -148,7 +153,7 @@ public class Animator {
     }
     public void animateMapSelect(){
         //to fix bug where if you click the ready button it also thinks you clicked a map
-        if(frameNumber-frameEnteredMapSelect > 100) {
+        if(frameNumber-frameEnteredMapSelect > 50) {
             //checks to see if any player clicked on a map
             for (int i = 0; i < clicks.size(); i++) {
                 boolean click = clicks.get(i);
@@ -193,73 +198,130 @@ public class Animator {
             }
         }
         //if only one player is alive, end game
-        if(numPlayersDead >= numPlayers-1 && numPlayers != 1)
-            screenNumber++;
-        //check if an enemy is boss
-        bossMode = false;
-        for(Player p : players){
-            if(p.isBoss()){
-                bossMode = true;
-                break;
-            }
-        }
-        //if a player lands on ground, reset their jumps
-        for(int i=0; i<players.size(); i++){
-            if(players.get(i).isOnGround())
-                timesJumped.set(i,0);
-        }
-        //animate the platforms
-        for(Platform plat : platList)
-            plat.animate(players);
-        //handle L attacks
-        for(int i=0; i<players.size(); i++){
-            Player p = players.get(i);
-            //If player is at max L charge, release L
-            if(p.getChargingLAttackStrength() >= Player.MAX_L)
-                releaseL.set(i,true);
-            //if charging, make player charge L
-            if(chargingL.get(i))
-                p.chargeLAttack();
-            //If release L, release it and set animation timer
-            if(releaseL.get(i)){
-                chargingL.set(i,false);
-                p.releaseLAttack();
-                releaseL.set(i,false);
-                attackAnimationTimers.get(i).set(2,0.25);
-            }
-        }
-        //animate the players
-        for(int i=0; i<players.size(); i++) {
-            Player p = players.get(i);
+        if(numPlayersDead >= numPlayers-1 && numPlayers != 1 && endGameTimer == -1)
+            endGameTimer = 2;
+        //if single player
+        if(numPlayers == 1 && numPlayersDead == 1 && endGameTimer == -1)
+            endGameTimer = 2;
 
-            //player movement and attack inputs
-            if(startGameTimer == 0) {
-                handlePlayerInputs(p, i);
-                handlePlayerMovement(p, i);
+        //if the game isn't over, play the game
+        if(endGameTimer == -1) {
+            //check if an enemy is boss
+            bossMode = false;
+            for (Player p : players) {
+                if (p.isBoss()) {
+                    bossMode = true;
+                    break;
+                }
             }
+            //if a player lands on ground, reset their jumps
+            for (int i = 0; i < players.size(); i++) {
+                if (players.get(i).isOnGround())
+                    timesJumped.set(i, 0);
+            }
+            //animate the platforms
+            for (Platform plat : platList)
+                plat.animate(players);
+            //handle L attacks
+            for (int i = 0; i < players.size(); i++) {
+                Player p = players.get(i);
+                //If player is at max L charge, release L
+                if (p.getChargingLAttackStrength() >= Player.MAX_L)
+                    releaseL.set(i, true);
+                //if charging, make player charge L
+                if (chargingL.get(i))
+                    p.chargeLAttack();
+                //If release L, release it and set animation timer
+                if (releaseL.get(i)) {
+                    chargingL.set(i, false);
+                    p.releaseLAttack();
+                    releaseL.set(i, false);
+                    attackAnimationTimers.get(i).set(2, 0.25);
+                }
+            }
+            //animate the players
+            for (int i = 0; i < players.size(); i++) {
+                Player p = players.get(i);
 
-            handleGravity(p);
-            p.animate(players);
-            //fixes the bug of double animation in single player
-            if(dummy == null)
-                p.animateAttacks((ArrayList<Player>) players);
-            
-            handleWalkingAnimation(p,i);
-            handlePlayerImages(p,i);
-            handleDeath(p,i);
-            handleAttackTimers(p,i);
-            handleCheatCodes(i);
+                //player movement and attack inputs
+                if (startGameTimer == 0) {
+                    handlePlayerInputs(p, i);
+                    handlePlayerMovement(p, i);
+                }
+
+                handleGravity(p);
+                p.animate();
+                //fixes the bug of double animation in single player
+                if (dummy == null)
+                    p.animateAttacks((ArrayList<Player>) players);
+                //fixes the bug where catching boomerang doesn't reset timer
+                if (p.getCharacter() == Player.LAWRENCE && playerTimers.get(i).get(1) == 0)
+                    p.setBoomerangs(new ArrayList<>());
+
+                handleWalkingAnimation(p, i);
+                handlePlayerImages(p, i);
+                handleDeath(p, i);
+                handleAttackTimers(p, i);
+                handleCheatCodes(i);
+            }
+            //handle the dummy
+            if (numPlayers == 1)
+                handleDummy();
+
+            if (startGameTimer > 0)
+                startGameTimer -= 1.0 / 80;
+            else
+                startGameTimer = 0;
         }
-        //handle the dummy
-        if(numPlayers == 1)
-            handleDummy();
-
-        if(startGameTimer > 0)
-            startGameTimer -= 1.0/80;
+        //else count it down to draw the GAME! image
+        else if(endGameTimer > 0){
+            endGameTimer -= 1.0/60;
+        }
+        //otherwise, move on
         else
-            startGameTimer = 0;
+            screenNumber ++;
     }
+    public void animatePlayAgain(){
+        gameTimer = 0;
+        choseMap = false;
+        //mapHandler.setMapNumber();
+        //reset the players
+        for(int i=0; i<players.size(); i++){
+            Player me = players.get(i);
 
+            if(me.getLives() > 0)
+                winner = me.getPlayerName();
+
+            me.initializeAttacks();
+            me.setDamageXVel(0);
+            me.setInputXVel(0);
+            me.setYVel(0);
+            me.setY(0);
+            me.setPercentage(0);
+            me.setIsBoss(false);
+            me.setSize(60,90);
+            me.setLives(3);
+            me.setStunDuration(0);
+            me.setFlameDuration(0);
+            me.setConfusionDuration(0);
+
+            endGameTimer = -1;
+
+            respawnTimers.set(i,0.0);
+            deathTimer.set(i,0.0);
+            characterSelected.set(i,false);
+
+            //if the player presses play again
+            if(clicks.get(i))
+                handleMouseMovementsInEndScreen(i);
+        }
+        //if every player wants to play again
+        if(!playAgain.contains(false)){
+            startGameTimer = 5.0;
+            screenNumber = CHARACTER_SELECT_SCREEN;
+            playAgain = Stream.generate(()->false).limit(numPlayers).collect(Collectors.toList());
+        }
+    }
 
     int imageSize = 90; double imgHeightRatio = 1.5/1.3;
     int imgsPerRow = 9; int imgOffset = 10;
@@ -289,7 +351,10 @@ public class Animator {
             }
         }
     }
-
+    public void handleMouseMovementsInEndScreen(int playerID){
+        if(new Rectangle(100, 300,700,150).contains(mouseCoords.get(playerID)))
+            playAgain.set(playerID,true);
+    }
 
     /**
      * In game methods
@@ -298,23 +363,23 @@ public class Animator {
         //Movement only if you pressed the button to move, you're not on motorcycle
         //you're not dashing, and you aren't exceeding speed limit
         if(playerMoves.get(index).get(LEFT) && !me.isStunned()
-                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
-            me.setXVel(-5);
+                && !me.isDashing() && me.getMoto() == null) {
+            me.setInputXVel(-5);
             me.setDirection(Projectile.LEFT);
             //confusion inverts controls
             if(me.isConfused()){
-                me.setXVel(5);
+                me.setInputXVel(5);
                 me.setDirection(Projectile.RIGHT);
             }
 
         }
         if(playerMoves.get(index).get(RIGHT) && !me.isStunned()
-                && !me.isDashing() && me.getXVel()>-7 && me.getXVel()<7) {
-            me.setXVel(5);
+                && !me.isDashing() && me.getMoto() == null) {
+            me.setInputXVel(5);
             me.setDirection(Projectile.RIGHT);
             //confusion inverts controls
             if(me.isConfused()){
-                me.setXVel(-5);
+                me.setInputXVel(-5);
                 me.setDirection(Projectile.LEFT);
             }
         }
@@ -370,16 +435,18 @@ public class Animator {
         if(me.isBoss() && playerMoves.get(index).get(DOWN))
             me.setYVel(7);
         if(me.isBoss() && playerMoves.get(index).get(LEFT))
-            me.setXVel(-7);
+            me.setInputXVel(-7);
         if(me.isBoss() && playerMoves.get(index).get(RIGHT))
-            me.setXVel(7);
+            me.setInputXVel(7);
     }
     public void handleGravity(Player me){
         //if an enemy is the boss, slow everything down
         if(bossMode && !me.isBoss()){
             Actor.GRAVITY = 0.1;
-            if(me.getXVel() > 1.7 || me.getXVel() < -1.7)
-                me.setXVel(me.getXVel()/3);
+            if(me.getXVel() > 1.7 || me.getXVel() < -1.7) {
+                me.setDamageXVel(me.getDamageXVel() / 3);
+                me.setInputXVel(me.getInputXVel() / 3);
+            }
         }
         //if you're on moon, low gravity
         else if(mapNumber == 3)
@@ -472,7 +539,7 @@ public class Animator {
         }
     }
     public void handleDeath(Player me, int index){
-        Rectangle screenBounds = new Rectangle(-200,-200,width+200,height+400);
+        Rectangle screenBounds = new Rectangle(-200,-300,width+450,height+400);
 
         //if I'm not on the map, I died
         if(!screenBounds.intersects(me.getHitBox())) {
@@ -491,11 +558,13 @@ public class Animator {
         if(respawnTimers.get(index) > 0 && players.get(index).getLives() > 0){
             me.setX(530);
             me.setY(100);
-            me.setXVel(0);
+            me.setInputXVel(0);
+            me.setDamageXVel(0);
             me.setYVel(0);
             respawnTimers.set(index, respawnTimers.get(index) - 1.0/60);
             me.setUntargetable(true);
-        }else{
+        }
+        else{
             respawnTimers.set(index,0.0);
             me.setUntargetable(false);
         }
@@ -503,7 +572,8 @@ public class Animator {
         //update death timers for blast lines
         if(deathTimer.get(index) > 0){
             deathTimer.set(index, deathTimer.get(index)-1.0/60);
-        } else
+        }
+        else
             deathTimer.set(index,0.0);
     }
     public void handleAttackTimers(Player me, int index){
@@ -589,11 +659,20 @@ public class Animator {
         }
         //L attacks
         if(l && !me.isLAttacking() && me.getLCooldown() <=0 && me.getLightning() == null
-                && !me.isHealing())
+                && !me.isHealing() && !me.isStunned())
             chargingL.set(index, true);
         else if(!l && me.getChargingLAttackStrength() > 0 && me.getLightning() == null
                 && !me.isHealing())
             releaseL.set(index, true);
+
+        //for testing pressing enter simulates getting hit by a projectile
+        if(playerMoves.get(index).get(ENTER)){
+            Player target = players.get(index);
+
+            target.setPercentage(target.getPercentage()+3.5);
+            target.setDamageXVel((1.5 + 3 * target.getPercentage() / 25) * -1*target.getDirection());
+            //target.setYVel((target.getYVel() - 1.5 - 2 * target.getPercentage() / 75));
+        }
     }
     public void handleDummy(){
         if(dummy != null) {
@@ -601,17 +680,19 @@ public class Animator {
             if (!screenBounds.intersects(dummy.getHitBox())) {
                 dummy.setX(500);
                 dummy.setY(0);
-                dummy.setXVel(0);
+                dummy.setInputXVel(0);
+                dummy.setDamageXVel(0);
                 dummy.setYVel(0);
             }
 
+            dummy.setLives(10000);
 
             ArrayList<Player> justDummy = new ArrayList<>();
             justDummy.add(dummy);
             for(Platform plat : platList)
                 plat.animate(justDummy);
             players.get(0).animateAttacks(justDummy);
-            dummy.animate(justDummy);
+            dummy.animate();
 
             if (playerMoves.get(0).get(P))
                 dummy.setPercentage(0);
@@ -670,6 +751,9 @@ public class Animator {
         data+= packKAttackCooldowns() + SSMClient.parseChar; //6
         data+= gameTimer + SSMClient.parseChar; //7
         data+= bossMode + SSMClient.parseChar; //8
+        data+= winner + SSMClient.parseChar; //9
+        data+= packPlayAgain() + SSMClient.parseChar; //10
+        data+= endGameTimer + SSMClient.parseChar; //11
 
         data+= parseChar;
 
@@ -729,7 +813,7 @@ public class Animator {
             data = data.concat(b + Projectile.arrayParseChar);
         return data;
     }
-    public static ArrayList<Boolean> unPackCharacterSelect(String s){
+    public static ArrayList<Boolean> unPackBooleanList(String s){
         ArrayList<Boolean> bools = new ArrayList<>();
         String[] data = s.split(Projectile.arrayParseChar);
         for(String b : data)
@@ -755,6 +839,11 @@ public class Animator {
             data.append(d.get(1)).append(Projectile.arrayParseChar);
         return data.toString();
     }
-
+    public String packPlayAgain(){
+        String data = "";
+        for(boolean b : playAgain)
+            data = data.concat(b+Projectile.arrayParseChar);
+        return data;
+    }
 }
 

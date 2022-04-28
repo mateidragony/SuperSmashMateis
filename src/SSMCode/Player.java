@@ -72,6 +72,9 @@ public class Player extends Actor{
     private int stunner;
     private double stunDuration, stunDrawTimer, confusionDuration, flameDuration, flameDrawTimer;
 
+    private double inputXVel;
+    private double damageXVel;
+
     private boolean taunting;
     private boolean isBoss;
 
@@ -185,6 +188,8 @@ public class Player extends Actor{
     public double getLAttackTimer(){return lAttackTimer;}
     public double getNadoTimer(){return nadoTimer;}
     public Color getColor(){return color;}
+    public double getInputXVel(){return inputXVel;}
+    public double getDamageXVel(){return damageXVel;}
 
     public boolean isBoss(){return isBoss;}
     public boolean isTaunting(){return taunting;}
@@ -221,6 +226,8 @@ public class Player extends Actor{
     public void setHealing(boolean c){isHealing = c;}
     public void setFlameDrawTimer(double c){flameDrawTimer = c;}
     public void setStunDrawTimer(double c){stunDrawTimer = c;}
+    public void setInputXVel(double c){inputXVel = c;}
+    public void setDamageXVel(double c){damageXVel = c;}
 
     /**
      * Initializing Methods
@@ -392,7 +399,14 @@ public class Player extends Actor{
         if(isConfused())
             g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
     }
-    public void animate(List<Player> players){
+    public void animate(){
+        setXVel(damageXVel+inputXVel);
+
+        if(getY()+getH() >= getGround()) {
+            damageXVel *= FRICTION;
+            inputXVel *= FRICTION;
+        }
+
         super.animate();
         //animate spock's boss mode
         if(isBoss)
@@ -406,8 +420,10 @@ public class Player extends Actor{
         if(isStunned())
             myMoto = null;
         //If i'm dashing slow down rapidly
-        if(isDashing())
-            setXVel(getXVel()*.75);
+        if(isDashing()) {
+            damageXVel *= .75;
+            inputXVel *= .75;
+        }
         //Handle being on fire. You move kind of sporadically
         if(isFlaming()){
             setPercentage(getPercentage() + .075);
@@ -422,7 +438,8 @@ public class Player extends Actor{
         if(!isOnGround())
             setYVel(getYVel()-Actor.GRAVITY);
         setYVel(getYVel()*.75);
-        setXVel(getXVel()*.75);
+        damageXVel *= .75;
+        inputXVel *= .75;
 
         setSize(180,270);
 
@@ -528,9 +545,9 @@ public class Player extends Actor{
 
                 if(p.isNull())
                     myProjectiles.remove(i);
-                if(p.outOfBounds())
+                else if(p.outOfBounds())
                     myProjectiles.remove(i);
-                if(p.getXVel() == 0)
+                else if(p.getXVel() == 0)
                     myProjectiles.remove(i);
             }else
                 myProjectiles.remove(i);
@@ -544,7 +561,7 @@ public class Player extends Actor{
 
                 if(r.outOfBounds())
                     myRockets.remove(i);
-                if(r.getXVel() == 0)
+                else if(r.getXVel() == 0)
                     myRockets.remove(i);
             }else
                 myRockets.remove(i);
@@ -598,8 +615,7 @@ public class Player extends Actor{
             myMoto.setX(getX());
             myMoto.setY(getY());
             //The if is to balance, so you can't save yourself always with your motorcycle
-            if(getXVel()>=-20 && getXVel()<=20)
-                setXVel(15*direction);
+            inputXVel = 15*direction;
 
             myMoto.animate(players);
             if(myMoto.isNull())
@@ -661,14 +677,14 @@ public class Player extends Actor{
         if(getCharacter() == LISON){
             if(lAttackTimer > 0){
                 setSize(116,90); //change the size so the image isn't squished
-                setXVel(8*direction); //You can't stand still if you're a tornado
+                inputXVel = 8*direction; //You can't stand still if you're a tornado
 
                 for(Player enemy : players) {
                     if (this.getHitBox().intersects(enemy.getHitBox())
                             && !team.equals(enemy.getTeam())
                             && !enemy.isUntargetable()) {
                         enemy.setPercentage(enemy.getPercentage() + 0.3);
-                        enemy.setXVel((2.5 + 4 * enemy.getPercentage() / 25) * direction);
+                        enemy.setDamageXVel((2.5 + 4 * enemy.getPercentage() / 25) * direction);
                     }
                 }
             } else //If she's not L attacking make her normal again
@@ -679,7 +695,7 @@ public class Player extends Actor{
             for(Player enemy : players){
                 if(getHitBox().intersects(enemy.getHitBox())){
                     enemy.setPercentage(enemy.getPercentage()+5.5);
-                    enemy.setXVel(1.5*getXVel()/60*(0.5+1.5*enemy.getPercentage()/20));
+                    enemy.setDamageXVel(1.5*getXVel()/60*(0.5+1.5*enemy.getPercentage()/20));
                     enemy.setYVel(.5*(enemy.getYVel()-1.5-2*enemy.getPercentage()/50));
                 }
             }
@@ -841,7 +857,7 @@ public class Player extends Actor{
             lAttackTimer *= 2;
         }
         else if(character == SALOME){
-            setXVel(lAttackStrength*300*direction);
+            setInputXVel(lAttackStrength*300*direction);
             lAttackCooldown = 1.5;
             lAttackTimer -= 0.1;
         }

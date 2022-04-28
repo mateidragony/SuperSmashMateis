@@ -2,9 +2,11 @@ package SSMEngines.util;
 
 import SSMCode.Platform;
 import SSMCode.Player;
+import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
 
+import javax.sound.sampled.Clip;
 import java.awt.*;
 import java.awt.image.ImageObserver;
 import java.text.DecimalFormat;
@@ -22,15 +24,21 @@ public class Drawer {
 
     private final List<Player> players;
     private ArrayList<Platform> platList;
+    private ArrayList<Boolean> playAgain;
     private Player dummy;
-    private double startGameTimer, gameTimer;
+    private double startGameTimer, gameTimer, endGameTimer; //3,2,1,Go ; clock ; GAME!
     private double jCooldown, kCooldown;
     private boolean bossMode;
+    private boolean dc;
 
     private int serverScreenNumber;
     private Point mouse;
+    private boolean clicked;
+    private String winner;
 
     private boolean enteredGameScreen = true;
+    private boolean enteredCharacterSelect = true;
+    private boolean playedGameSFX;
 
     //Character select variables
     List<Boolean> characterSelected;
@@ -45,6 +53,8 @@ public class Drawer {
     private final DecimalFormat df = new DecimalFormat("####.#");
 
     public Drawer(int playerID, int playerMode){
+        initMusic();
+
         this.playerID = playerID;
         this.playerMode = playerMode;
         myMapHandler = new MapHandler();
@@ -54,8 +64,9 @@ public class Drawer {
         characterSelected = Stream.generate(() -> Boolean.FALSE).limit(playerMode).collect(Collectors.toList());
     }
 
-    public void draw(Graphics g, ImageObserver io, Point mouse){
+    public void draw(Graphics g, ImageObserver io, Point mouse, boolean clicked){
         this.mouse = mouse;
+        this.clicked = clicked;
 
         if (serverScreenNumber == Animator.CHARACTER_SELECT_SCREEN)
             drawCharacterSelect(g, io);
@@ -63,6 +74,8 @@ public class Drawer {
             drawMapSelect(g,io);
         else if(serverScreenNumber == Animator.IN_GAME_SCREEN)
             drawInGame(g,io);
+        else if(serverScreenNumber == Animator.END_GAME_SCREEN)
+            drawEndGame(g);
     }
 
     //for drawing imgs in character select
@@ -72,6 +85,11 @@ public class Drawer {
 
 
     public void drawCharacterSelect(Graphics g, ImageObserver io){
+        if(enteredCharacterSelect){
+            playSFXClip(characterMusic);
+            enteredCharacterSelect = false;
+        }
+
         //draw bg color
         g.setColor(Color.black);
         g.fillRect(0,0,width,height);
@@ -140,6 +158,9 @@ public class Drawer {
             platList = myMapHandler.initPlats();
             inGameBG = myMapHandler.getMapBGs().get(mapNumber);
 
+            characterMusic.stop();
+            playSFXClip(inGameMusic);
+
             enteredGameScreen = false;
         }
 
@@ -179,8 +200,63 @@ public class Drawer {
             g.drawString(""+(int)(gameTimer/60)+" : 0"+(int)(gameTimer%60), 900,40);
         else
             g.drawString(""+(int)(gameTimer/60)+" : "+(int)(gameTimer%60), 900,40);
-    }
 
+        if(endGameTimer > 0) {
+            if(!playedGameSFX) {
+                inGameMusic.stop();
+                playSFXClip(gameSFX);
+                playedGameSFX = true;
+            }
+            g.drawImage(imgGame, (int)(width/2 - 1032*.75/2), 160, (int)(1032*.75), (int)(250*.75), io);
+        }
+    }
+    public void drawEndGame(Graphics g){
+        enteredGameScreen = true;
+        enteredCharacterSelect = true;
+        inGameMusic.stop();
+
+        g.setColor(Color.black);
+        g.fillRect(0, 0, width, height);
+        g.setColor(Color.white);
+        g.setFont(myFont);
+
+        //Draw the name of the winner, or your name
+        if(!winner.equals(players.get(playerID).getPlayerName())){
+            g.drawString(winner+" Wins!", 150, 150);
+        }
+        else{
+            g.drawString("You Win!!", 150,150);
+        }
+
+        g.fillRect(100, 300,550,150);
+        g.setColor(Color.black);
+        g.setFont(myFont);
+
+        if(!playAgain.get(playerID))
+            g.drawString("Play Again?",120,400);
+        else
+            g.drawString("Waiting for others" ,120,400);
+
+        int numReady = 0; //the number of players who pressed ready
+        for(int i=0; i<playerMode; i++){
+            if(i!=playerID && playAgain.get(i))
+                numReady++;
+        }
+
+        g.setColor(Color.white);
+        g.setFont(new Font("Sans Serif", Font.BOLD, 45));
+        g.drawString(numReady + " players want to play again", 120, 550);
+
+    }
+    public void drawDCScreen(Graphics g){
+        g.setColor(Color.black);
+        g.fillRect(0, 0, width, height);
+        g.setColor(Color.white);
+        g.setFont(myFont);
+
+        g.drawString("A player has has Disconnected.", 50, 100);
+        g.drawString("Lol Out Loud!", 50, 210);
+    }
 
     public void drawStartingGame(Graphics g, ImageObserver io){
         if(startGameTimer > 0)
@@ -302,15 +378,21 @@ public class Drawer {
             imageRects.add(new Rectangle(imageX-3,imageY-5,imageSize+10,imageHeight+10));
         }
 
-        for(Rectangle r: imageRects){
-            if(r.contains(mouse))
+        for(int i=0; i<imageRects.size(); i++){
+            Rectangle r = imageRects.get(i);
+            if(r.contains(mouse)) {
                 g.fill(r);
+                if(clicked){
+                    playSFXClip(sfxClips.get(i));
+                }
+            }
         }
 
         Rectangle ready = new Rectangle((width-16)/2-205 - 5,415 - 5,410 + 10,50 + 10);
         g.setColor(new Color(0x9B0D0D));
-        if(ready.contains(mouse))
+        if(ready.contains(mouse)) {
             g.fill(ready);
+        }
     }
     public void drawCharacterSelectBox(int playerNumber, Graphics g, ImageObserver io){
         //draws each of the other players' characters
@@ -359,31 +441,36 @@ public class Drawer {
         serverScreenNumber = Integer.parseInt(gameData[0]);
         mapNumber = Integer.parseInt(gameData[1]);
         mice = Animator.unPackMice(gameData[2]);
-        characterSelected = Animator.unPackCharacterSelect(gameData[3]);
+        characterSelected = Animator.unPackBooleanList(gameData[3]);
         startGameTimer = Double.parseDouble(gameData[4]);
         jCooldown = Animator.unPackAttackCooldowns(gameData[5]).get(playerID);
         kCooldown = Animator.unPackAttackCooldowns(gameData[6]).get(playerID);
         gameTimer = Double.parseDouble(gameData[7]);
         bossMode = Boolean.parseBoolean(gameData[8]);
+        winner = gameData[9];
+        playAgain = Animator.unPackBooleanList(gameData[10]);
+        endGameTimer = Double.parseDouble(gameData[11]);
 
-        for(int i=1;i<data.length-1;i++){
+        for(int i=1;i<data.length-2;i++){
             if(data[i].equals("null"))
                 players.set(i-1,null);
             else
                 players.set(i-1,Player.unPack(data[i]));
         }
 
-        if(data[data.length-1].equals("null"))
+        if(data[data.length-2].equals("null"))
             dummy = null;
         else
-            dummy = Player.unPack(data[data.length-1]);
+            dummy = Player.unPack(data[data.length-2]);
+
+        dc = Boolean.parseBoolean(gameData[gameData.length-1]);
 
     }
 
 
     //Images
     private Image inGameBG;
-    private static Image img3, img2, img1, imgGo;
+    private static Image img3, img2, img1, imgGo, imgGame;
     private static Image characterSelectReadyButton;
     private static Image characterSelectReady;
     private static Image life, fireFG;
@@ -403,10 +490,50 @@ public class Drawer {
         img2 = toolkit.getImage("SSMImages/3-2-1/2.png");
         img1 = toolkit.getImage("SSMImages/3-2-1/1.png");
         imgGo = toolkit.getImage("SSMImages/3-2-1/Go.png");
+        imgGame = toolkit.getImage("SSMImages/3-2-1/Game.png");
 
         life = toolkit.getImage("SSMImages/heart.png");
         fireFG = toolkit.getImage("SSMImages/fire_fg.png");
     }
 
+
+    Clip characterMusic;
+    Clip inGameMusic;
+    Clip spockBossMusic;
+    Clip gameSFX;
+
+    ArrayList<Clip> sfxClips;
+
+    public void initMusic() {
+        Projectile.initSFX();
+
+        characterMusic = AudioUtility.loadClip("SSMMusic/CharacterSelectTheme.wav");
+        inGameMusic = AudioUtility.loadClip("SSMMusic/inGameMusic.wav");
+        spockBossMusic = AudioUtility.loadClip("SSMMusic/spockBossTheme.wav");
+        gameSFX = AudioUtility.loadClip("SSMMusic/game.wax");
+
+        sfxClips = new ArrayList<>();
+
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/mateiSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/umerSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/adamSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/jackSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/kaushalSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/bobSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/spockSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lison sfx.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/obamaSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/emiSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
+    }
+
+    public void playSFXClip(Clip c){
+        if(c!=null){
+            c.stop();
+            c.setFramePosition(0);
+            c.start();
+        }
+    }
 
 }
