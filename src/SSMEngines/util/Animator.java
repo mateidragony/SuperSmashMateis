@@ -153,7 +153,7 @@ public class Animator {
     }
     public void animateMapSelect(){
         //to fix bug where if you click the ready button it also thinks you clicked a map
-        if(frameNumber-frameEnteredMapSelect > 50) {
+        if(frameNumber-frameEnteredMapSelect > 75) {
             //checks to see if any player clicked on a map
             for (int i = 0; i < clicks.size(); i++) {
                 boolean click = clicks.get(i);
@@ -295,6 +295,7 @@ public class Animator {
             me.initializeAttacks();
             me.setDamageXVel(0);
             me.setInputXVel(0);
+            me.setAirInputXVel(0);
             me.setYVel(0);
             me.setY(0);
             me.setPercentage(0);
@@ -304,6 +305,7 @@ public class Animator {
             me.setStunDuration(0);
             me.setFlameDuration(0);
             me.setConfusionDuration(0);
+            me.setCharacter(Player.DUMMY);
 
             endGameTimer = -1;
 
@@ -365,11 +367,11 @@ public class Animator {
         if(playerMoves.get(index).get(LEFT) && !me.isStunned()
                 && !me.isDashing() && me.getMoto() == null
                 && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
-            me.setInputXVel(-5);
+            me.move(-1);
             me.setDirection(Projectile.LEFT);
             //confusion inverts controls
             if(me.isConfused()){
-                me.setInputXVel(5);
+                me.move(1);
                 me.setDirection(Projectile.RIGHT);
             }
 
@@ -377,14 +379,16 @@ public class Animator {
         if(playerMoves.get(index).get(RIGHT) && !me.isStunned()
                 && !me.isDashing() && me.getMoto() == null
                 && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
-            me.setInputXVel(5);
+            me.move(1);
             me.setDirection(Projectile.RIGHT);
             //confusion inverts controls
             if(me.isConfused()){
-                me.setInputXVel(-5);
+                me.move(-1);
                 me.setDirection(Projectile.LEFT);
             }
         }
+
+
         //When you press W
         if(playerMoves.get(index).get(UP) && timesJumped.get(index)<2
                 && !me.isStunned()){

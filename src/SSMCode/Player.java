@@ -72,8 +72,7 @@ public class Player extends Actor{
     private int stunner;
     private double stunDuration, stunDrawTimer, confusionDuration, flameDuration, flameDrawTimer;
 
-    private double inputXVel;
-    private double damageXVel;
+    private double inputXVel, damageXVel, airInputXVel;
 
     private boolean taunting;
     private boolean isBoss;
@@ -93,6 +92,7 @@ public class Player extends Actor{
         this.playerID = playerID;
         character = DUMMY;
         myImageIndex = 1;
+        direction = 1;
 
         initializeAttacks();
 
@@ -113,6 +113,7 @@ public class Player extends Actor{
         this.playerID = playerID;
         character = DUMMY;
         myImageIndex = 1;
+        direction = 1;
 
         initializeAttacks();
 
@@ -228,6 +229,7 @@ public class Player extends Actor{
     public void setStunDrawTimer(double c){stunDrawTimer = c;}
     public void setInputXVel(double c){inputXVel = c;}
     public void setDamageXVel(double c){damageXVel = c;}
+    public void setAirInputXVel(double c){airInputXVel = c;}
 
     /**
      * Initializing Methods
@@ -400,11 +402,12 @@ public class Player extends Actor{
             g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
     }
     public void animate(){
-        setXVel(damageXVel+inputXVel);
+        setXVel(damageXVel+inputXVel + airInputXVel);
 
         if(getY()+getH() >= getGround()) {
             damageXVel *= FRICTION;
             inputXVel *= FRICTION;
+            airInputXVel *= FRICTION;
         }
 
         super.animate();
@@ -894,6 +897,17 @@ public class Player extends Actor{
             }
             lAttackCooldown = 5.0;
         }
+    }
+
+    //movement
+    public void move(int dir){
+
+        inputXVel = 5 * dir;
+
+        if(!isOnGround() && getXVel() < 5 && dir == Projectile.RIGHT)
+            airInputXVel += .25;
+        else if(!isOnGround() && getXVel() > -5 && dir == Projectile.LEFT)
+            airInputXVel -= .25;
     }
 
 

@@ -310,28 +310,22 @@ public class Drawer {
 
         g.setFont(font);
 
-        String name = Player.getCharacterNames().get(players.get(playerNumber).getCharacter());
-        if(name.length() > 8)
-            g.setFont(new Font(Font.MONOSPACED,Font.BOLD, (int)( (86.0/name.length()) / .6) )); //Font size = (pixels per letter) / 0.6
-        g.setColor(Color.lightGray);
-        g.drawString(name,x+10+76+5,(height-39)-boxHeight+85 - yOffset); //Draw character name
-
         g.setColor(Color.lightGray);
         g.drawString(df.format(players.get(playerNumber).getPercentage())+"%", x+10+76+5,(height-39)-boxHeight+60 - yOffset); //Draw Player number
 
-        name = players.get(playerNumber).getPlayerName();
+        String name = players.get(playerNumber).getPlayerName();
         if(name.length() > 8)
-            g.setFont(new Font(Font.MONOSPACED,Font.BOLD, (int)( (86.0/name.length()) / .6) ));
+            g.setFont(new Font(Font.MONOSPACED,Font.BOLD, (int)( (100.0/name.length()) / .6) ));
         g.setColor(Color.lightGray);
         g.drawString(name, x+10+76+5,(height-39)-boxHeight+30 - yOffset); //Draw Player name
 
-        int livesY = (height - 39) - boxHeight + 95 - yOffset;
+        int livesY = (height - 39) - boxHeight + 68 - yOffset;
         if(players.get(playerNumber).getLives() <= 4) {
             for (int i = 0; i < players.get(playerNumber).getLives(); i++)
-                g.drawImage(life, x + 10 + 76 + 5 + 15 * i, livesY, io);
+                g.drawImage(life, x + 10 + 76 + 15 * i, livesY, io);
         } else {
-            g.drawImage(life, x + 10 + 76 + 5, livesY, io);
-            g.drawString("x"+players.get(playerNumber).getLives(),x+10+76+5+30, livesY);
+            g.drawImage(life, x + 10 + 76, livesY, io);
+            g.drawString("x"+players.get(playerNumber).getLives(),x+10+76+5+30, livesY+15);
         }
     }
     public void drawAbilityBar(Graphics g){
