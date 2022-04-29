@@ -363,7 +363,8 @@ public class Animator {
         //Movement only if you pressed the button to move, you're not on motorcycle
         //you're not dashing, and you aren't exceeding speed limit
         if(playerMoves.get(index).get(LEFT) && !me.isStunned()
-                && !me.isDashing() && me.getMoto() == null) {
+                && !me.isDashing() && me.getMoto() == null
+                && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
             me.setInputXVel(-5);
             me.setDirection(Projectile.LEFT);
             //confusion inverts controls
@@ -374,7 +375,8 @@ public class Animator {
 
         }
         if(playerMoves.get(index).get(RIGHT) && !me.isStunned()
-                && !me.isDashing() && me.getMoto() == null) {
+                && !me.isDashing() && me.getMoto() == null
+                && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
             me.setInputXVel(5);
             me.setDirection(Projectile.RIGHT);
             //confusion inverts controls

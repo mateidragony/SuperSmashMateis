@@ -68,14 +68,17 @@ public class Drawer {
         this.mouse = mouse;
         this.clicked = clicked;
 
-        if (serverScreenNumber == Animator.CHARACTER_SELECT_SCREEN)
-            drawCharacterSelect(g, io);
-        else if(serverScreenNumber == Animator.MAP_SELECT)
-            drawMapSelect(g,io);
-        else if(serverScreenNumber == Animator.IN_GAME_SCREEN)
-            drawInGame(g,io);
-        else if(serverScreenNumber == Animator.END_GAME_SCREEN)
-            drawEndGame(g);
+        if(!dc) {
+            if (serverScreenNumber == Animator.CHARACTER_SELECT_SCREEN)
+                drawCharacterSelect(g, io);
+            else if (serverScreenNumber == Animator.MAP_SELECT)
+                drawMapSelect(g, io);
+            else if (serverScreenNumber == Animator.IN_GAME_SCREEN)
+                drawInGame(g, io);
+            else if (serverScreenNumber == Animator.END_GAME_SCREEN)
+                drawEndGame(g);
+        } else
+            drawDCScreen(g);
     }
 
     //for drawing imgs in character select
@@ -213,6 +216,7 @@ public class Drawer {
     public void drawEndGame(Graphics g){
         enteredGameScreen = true;
         enteredCharacterSelect = true;
+        playedGameSFX = false;
         inGameMusic.stop();
 
         g.setColor(Color.black);
@@ -510,7 +514,7 @@ public class Drawer {
         characterMusic = AudioUtility.loadClip("SSMMusic/CharacterSelectTheme.wav");
         inGameMusic = AudioUtility.loadClip("SSMMusic/inGameMusic.wav");
         spockBossMusic = AudioUtility.loadClip("SSMMusic/spockBossTheme.wav");
-        gameSFX = AudioUtility.loadClip("SSMMusic/game.wax");
+        gameSFX = AudioUtility.loadClip("SSMMusic/game.wav");
 
         sfxClips = new ArrayList<>();
 
@@ -525,7 +529,7 @@ public class Drawer {
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/obamaSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/emiSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
-        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/neelSFX.wav"));
     }
 
     public void playSFXClip(Clip c){
