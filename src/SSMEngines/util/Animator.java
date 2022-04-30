@@ -296,6 +296,7 @@ public class Animator {
             me.setDamageXVel(0);
             me.setInputXVel(0);
             me.setAirInputXVel(0);
+            me.setXVel(0);
             me.setYVel(0);
             me.setY(0);
             me.setPercentage(0);
@@ -567,6 +568,10 @@ public class Animator {
             me.setInputXVel(0);
             me.setDamageXVel(0);
             me.setYVel(0);
+            me.setDamageXVel(0);
+            me.setInputXVel(0);
+            me.setAirInputXVel(0);
+            me.setXVel(0);
             respawnTimers.set(index, respawnTimers.get(index) - 1.0/60);
             me.setUntargetable(true);
         }

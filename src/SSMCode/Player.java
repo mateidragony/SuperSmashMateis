@@ -340,6 +340,13 @@ public class Player extends Actor{
      */
     public void draw(Graphics g, ImageObserver io){
 
+        //Testing
+        if(character!=DUMMY) {
+            g.setColor(Color.white);
+            g.setFont(new Font("Sans Serif", Font.PLAIN, 20));
+            g.drawString("XVel: "+getXVel(),10,100);
+        }
+
         int[] triangle1XPoints = {20,50,50};
         int[] triangle2XPoints = {1070,1040,1040};
         int[] triangleYPoints = {(int)getY(),(int)getY()-10,(int)getY()+10};
@@ -904,10 +911,10 @@ public class Player extends Actor{
 
         inputXVel = 5 * dir;
 
-        if(!isOnGround() && getXVel() < 5 && dir == Projectile.RIGHT)
-            airInputXVel += .25;
-        else if(!isOnGround() && getXVel() > -5 && dir == Projectile.LEFT)
-            airInputXVel -= .25;
+        if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 5 && dir == Projectile.RIGHT)
+            airInputXVel += .1;
+        else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -5 && dir == Projectile.LEFT)
+            airInputXVel -= .1;
     }
 
 
