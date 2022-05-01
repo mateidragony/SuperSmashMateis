@@ -371,28 +371,28 @@ public class SSMLauncher extends JPanel {
                 && playerMode != 0;
     }
 
-    public static void main(String[] args) {
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        SSMLauncher launcher = new SSMLauncher();
-
-        JFrame myFrame = new JFrame("SSM Launcher");
-        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        myFrame.setVisible(true);
-        myFrame.add(launcher);
-        myFrame.setResizable(false);
-        myFrame.setSize(launcher.getPreferredSize());
-        myFrame.setLocation(300, 50);
-
-        Timer t = new Timer(1000/60, timerRepaint -> myFrame.getComponent(0).repaint());
-
-        t.start();
-    }
+//    public static void main(String[] args) {
+//
+//        try {
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+//
+//        SSMLauncher launcher = new SSMLauncher();
+//
+//        JFrame myFrame = new JFrame("SSM Launcher");
+//        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        myFrame.setVisible(true);
+//        myFrame.add(launcher);
+//        myFrame.setResizable(false);
+//        myFrame.setSize(launcher.getPreferredSize());
+//        myFrame.setLocation(300, 50);
+//
+//        Timer t = new Timer(1000/60, timerRepaint -> myFrame.getComponent(0).repaint());
+//
+//        t.start();
+//    }
 
 
     private static class HintTextField extends JTextField {

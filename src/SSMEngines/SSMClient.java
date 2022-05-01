@@ -28,6 +28,7 @@ public class SSMClient extends AnimationPanel{
     private String connecting;
     private String cheatCode;
     private String keyTyped;
+    private boolean dcFromServer;
 
     public SSMClient() {
         super("Super Smash Mateis");
@@ -85,7 +86,7 @@ public class SSMClient extends AnimationPanel{
             }
         }else{
             IntroMusic.stop();
-            drawer.draw(g,this, new Point(mouseX,mouseY), mousePressed);
+            drawer.draw(g,this, new Point(mouseX,mouseY), mousePressed, dcFromServer);
         }
     }
 
@@ -147,7 +148,8 @@ public class SSMClient extends AnimationPanel{
                     if(drawer != null)
                         drawer.unpack(str);
                 } catch(IOException e){
-                    e.printStackTrace();
+                    dcFromServer = true;
+                    System.out.println("Raggy? Where are my resticles?");
                 }
             }
         }
@@ -179,7 +181,8 @@ public class SSMClient extends AnimationPanel{
                         ex.printStackTrace();
                     }
                 } catch(IOException e){
-                    e.printStackTrace();
+                    dcFromServer = true;
+                    System.out.println("Raggy? Where are my resticles?");
                 }
             }
         }

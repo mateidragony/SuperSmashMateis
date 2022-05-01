@@ -38,7 +38,7 @@ public class Projectile extends Actor{
     private boolean playedSFX;
     private int dir;
     private final Color myColor;
-    private static Clip projSFX;
+    public static Clip sfx;
    
     public Projectile(int x,int y, int w,int h, int direction, String team_, int shooter, boolean bossMode, boolean sfx){
         super(x,y,w,h);
@@ -155,15 +155,10 @@ public class Projectile extends Actor{
         }
     }
     
-    public static void initSFX(){       
-        projSFX = AudioUtility.loadClip("SSMMusic/SFX/pew.wav");
+    public static void initSFX(){
+        sfx = AudioUtility.loadClip("SSMMusic/SFX/pew.wav");
     }
-    
-    public static void playSFX(){
-        projSFX.stop();
-        projSFX.setFramePosition(0);
-        projSFX.start();
-    }
+
     
     public static void initImages(){
         Poolkit toolkit = new Poolkit();

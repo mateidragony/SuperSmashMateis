@@ -31,6 +31,8 @@ public class Drawer {
     private boolean bossMode;
     private boolean dc;
 
+    private List<Integer> sfxIndex;
+
     private int serverScreenNumber;
     private Point mouse;
     private boolean clicked;
@@ -62,13 +64,15 @@ public class Drawer {
 
         players = IntStream.range(0,playerMode).mapToObj(Player::new).collect(Collectors.toList());
         characterSelected = Stream.generate(() -> Boolean.FALSE).limit(playerMode).collect(Collectors.toList());
+
+        sfxIndex = Stream.generate(()->0).limit(playerMode).collect(Collectors.toList());
     }
 
-    public void draw(Graphics g, ImageObserver io, Point mouse, boolean clicked){
+    public void draw(Graphics g, ImageObserver io, Point mouse, boolean clicked, boolean dc){
         this.mouse = mouse;
         this.clicked = clicked;
 
-        if(!dc) {
+        if(!dc || !this.dc) {
             if (serverScreenNumber == Animator.CHARACTER_SELECT_SCREEN)
                 drawCharacterSelect(g, io);
             else if (serverScreenNumber == Animator.MAP_SELECT)
@@ -204,6 +208,8 @@ public class Drawer {
         else
             g.drawString(""+(int)(gameTimer/60)+" : "+(int)(gameTimer%60), 900,40);
 
+        handleSFX();
+
         if(endGameTimer > 0) {
             if(!playedGameSFX) {
                 inGameMusic.stop();
@@ -243,7 +249,7 @@ public class Drawer {
 
         int numReady = 0; //the number of players who pressed ready
         for(int i=0; i<playerMode; i++){
-            if(i!=playerID && playAgain.get(i))
+            if(playAgain.get(i))
                 numReady++;
         }
 
@@ -361,6 +367,17 @@ public class Drawer {
             g.drawString(String.valueOf(df.format(players.get(playerID).getLCooldown())),x+12,y+155);
         }
     }
+    public void handleSFX(){
+        for(int i=0; i<players.size(); i++){
+            Player p = players.get(i);
+            ArrayList<Clip> playerSFX = Player.convertSFX(p.getMySFX());
+
+            for(int index = sfxIndex.get(i); index<playerSFX.size(); index++){
+                playSFXClip(playerSFX.get(index));
+                sfxIndex.set(i,sfxIndex.get(i)+1);
+            }
+        }
+    }
 
     public void drawMouseMovementsCharacterSelect(Graphics gg){
         Graphics2D g = (Graphics2D)gg;
@@ -464,7 +481,6 @@ public class Drawer {
         dc = Boolean.parseBoolean(gameData[gameData.length-1]);
 
     }
-
 
     //Images
     private Image inGameBG;

@@ -302,7 +302,6 @@ public class Animator {
             me.setPercentage(0);
             me.setIsBoss(false);
             me.setSize(60,90);
-            me.setLives(3);
             me.setStunDuration(0);
             me.setFlameDuration(0);
             me.setConfusionDuration(0);
@@ -323,6 +322,9 @@ public class Animator {
             startGameTimer = 5.0;
             screenNumber = CHARACTER_SELECT_SCREEN;
             playAgain = Stream.generate(()->false).limit(numPlayers).collect(Collectors.toList());
+
+            for(Player me : players)
+                me.setLives(3);
         }
     }
 
@@ -452,7 +454,7 @@ public class Animator {
             Actor.GRAVITY = 0.1;
             if(me.getXVel() > 1.7 || me.getXVel() < -1.7) {
                 me.setDamageXVel(me.getDamageXVel() / 3);
-                me.setInputXVel(me.getInputXVel() / 3);
+                me.setXVel(me.getXVel() / 3);
             }
         }
         //if you're on moon, low gravity

@@ -3,9 +3,11 @@ package SSMCode;
 import SSMCode.PlayerAttacks.*;
 import SSMEngines.SSMClient;
 import SSMEngines.old.PlayerOld;
+import SSMEngines.util.AudioUtility;
 import SSMEngines.util.Poolkit;
 
 import javax.imageio.ImageIO;
+import javax.sound.sampled.Clip;
 import java.awt.*;
 import java.awt.image.ImageObserver;
 import java.io.File;
@@ -59,7 +61,9 @@ public class Player extends Actor{
     private static ArrayList<Image> miscImages;
     private static ArrayList<String> myNames;
     private static ArrayList<String> myTaunts;
-    
+
+    private ArrayList<String> mySFX = new ArrayList<>();
+
     private static final double testPrintTimer = 1;
 
     private final int playerID;
@@ -191,6 +195,7 @@ public class Player extends Actor{
     public Color getColor(){return color;}
     public double getInputXVel(){return inputXVel;}
     public double getDamageXVel(){return damageXVel;}
+    public ArrayList<String> getMySFX(){return mySFX;}
 
     public boolean isBoss(){return isBoss;}
     public boolean isTaunting(){return taunting;}
@@ -230,6 +235,7 @@ public class Player extends Actor{
     public void setInputXVel(double c){inputXVel = c;}
     public void setDamageXVel(double c){damageXVel = c;}
     public void setAirInputXVel(double c){airInputXVel = c;}
+    public void setMySFX(ArrayList<String> c){mySFX = c;}
 
     /**
      * Initializing Methods
@@ -513,7 +519,7 @@ public class Player extends Actor{
 
     public void drawAttacks(Graphics g, ImageObserver io){
         //Streams through projectiles and draws them
-        myProjectiles.stream().filter(Objects::nonNull).forEach(p->p.draw(g,io));
+        myProjectiles.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
         //Streams through rockets and draws them
         myRockets.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
         //draw punch
@@ -624,8 +630,8 @@ public class Player extends Actor{
             myMoto.setDirection(direction);
             myMoto.setX(getX());
             myMoto.setY(getY());
-            //The if is to balance, so you can't save yourself always with your motorcycle
-            inputXVel = 15*direction;
+
+            motoMove(direction);
 
             myMoto.animate(players);
             if(myMoto.isNull())
@@ -730,6 +736,7 @@ public class Player extends Actor{
             Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4,
                     10,10,getDirection(),getTeam(), character, false, false);
             myProjectiles.add(myProj);
+            mySFX.add("gun");
         }
         //If I am Obama, my J attack is a rocket
         else if(character == OBAMA){
@@ -761,6 +768,7 @@ public class Player extends Actor{
             Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
                     10,10,getDirection(),getTeam(),character, false, false);
             myProjectiles.add(myProj);
+            mySFX.add("gun");
         }
 
         isHealing = false;
@@ -801,6 +809,7 @@ public class Player extends Actor{
             Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
                     10,10,getDirection(),getTeam(), character,false,false);
             myProjectiles.add(myProj);
+            mySFX.add("gun");
         }
         //Spock Raining Code
         else if(character == SPOCK){
@@ -909,11 +918,25 @@ public class Player extends Actor{
     //movement
     public void move(int dir){
 
-        inputXVel = 5 * dir;
+        if(dir == -1 && getXVel() > -5)
+            inputXVel = 5 * dir;
+        else if(dir == 1 && getXVel() < 5)
+            inputXVel = 5 * dir;
 
         if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 5 && dir == Projectile.RIGHT)
             airInputXVel += .1;
         else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -5 && dir == Projectile.LEFT)
+            airInputXVel -= .1;
+    }
+    public void motoMove(int dir){
+        if(dir == -1 && getXVel() > -15)
+            inputXVel = 15 * dir;
+        else if(dir == 1 && getXVel() < 15)
+            inputXVel = 15 * dir;
+
+        if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 15 && dir == Projectile.RIGHT)
+            airInputXVel += .1;
+        else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -15 && dir == Projectile.LEFT)
             airInputXVel -= .1;
     }
 
@@ -951,6 +974,7 @@ public class Player extends Actor{
         packedPlayersInfo += stunDrawTimer + SSMClient.parseChar; //20
         packedPlayersInfo += flameDrawTimer + SSMClient.parseChar; //21
         packedPlayersInfo += lAttackCooldown + SSMClient.parseChar; //22
+        packedPlayersInfo += packSFX() + SSMClient.parseChar; //23
 
         packedPlayersInfo += parseChar;
 
@@ -996,6 +1020,7 @@ public class Player extends Actor{
         player.setStunDrawTimer(Double.parseDouble(data[20]));
         player.setFlameDrawTimer(Double.parseDouble(data[21]));
         player.setLCooldown(Double.parseDouble(data[22]));
+        player.setMySFX(player.unPackSFX(data[23]));
 
         player.setPList(Projectile.unPackArray(playerData[1]));
         player.setRocketList(Rocket.unPackArray(playerData[2]));
@@ -1010,6 +1035,32 @@ public class Player extends Actor{
         player.setBoomerangs(Boomerang.unPackArray(playerData[11]));
 
         return player;
+    }
+
+    //Sound effect codes:
+    //"gun" = Matei, Salome, Jack projectiles
+    public String packSFX(){
+        String data = " ";
+        for(String s : mySFX)
+            data = data.concat(s + Projectile.arrayParseChar);
+        return data;
+    }
+    public ArrayList<String> unPackSFX(String s){
+        String[] data = s.split(Projectile.arrayParseChar);
+        return new ArrayList<>(Arrays.asList(data));
+    }
+    public static ArrayList<Clip> convertSFX(ArrayList<String> data){
+        ArrayList<Clip> sfx = new ArrayList<>();
+        for(String str : data){
+            switch(str){
+                case("gun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/pew.wav"));
+                case("rocket") -> sfx.add(Projectile.sfx);
+                case("jeez") -> sfx.add(Projectile.sfx);
+                case("us") -> sfx.add(Projectile.sfx);
+                case("among") -> sfx.add(Projectile.sfx);
+            }
+        }
+        return sfx;
     }
 }
 
