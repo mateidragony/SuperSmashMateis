@@ -953,11 +953,17 @@ public class Player extends Actor{
         //Bryce switch + explosion
         else if(character == BRYCE){
             double oldX = getX(); double oldY = getY();
-            setX(myMimic.getX()); setY(myMimic.getY());
-            myMimic.setX(oldX); myMimic.setY(oldY);
 
-            myExplosions.add(new Explosion((int) (oldX + getW() / 2.0), (int) (oldY + getH() / 2.0), 150,
-                    150, team, .4, false, character));
+            if(myMimic != null) {
+                setX(myMimic.getX());
+                setY(myMimic.getY());
+                myMimic.setX(oldX);
+                myMimic.setY(oldY);
+
+                myExplosions.add(new Explosion((int) (oldX + getW() / 2.0), (int) (oldY + getH() / 2.0), 150,
+                        150, team, .4, false, character));
+            }
+
             myExplosions.add(new Explosion((int) (getX() + getW() / 2.0), (int) (getY() + getH() / 2.0), 150,
                     150, team, .4, false, character));
             mySFX.add("stickyExplosion");

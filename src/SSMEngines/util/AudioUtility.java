@@ -21,7 +21,7 @@ public class AudioUtility
             audioInputStream =  
                 AudioSystem.getAudioInputStream(new File(fnm).getAbsoluteFile());
             // create clip reference 
-            clip = AudioSystem.getClip(); 
+            clip = AudioSystem.getClip();
             clip.open(audioInputStream);
         }
         catch(Exception e)
