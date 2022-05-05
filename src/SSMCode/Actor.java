@@ -51,7 +51,7 @@ public class Actor extends GameObject{
     
     //methods
     public void basicPhysicsMotion(){        
-        if(getY()+getH() >= ground) {
+        if(getY()+getH() > ground) {
             setY(ground-getH());
             yVel = 0;
             setXVel(getXVel()*FRICTION);

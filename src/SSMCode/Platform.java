@@ -54,4 +54,22 @@ public class Platform extends GameObject {
             }
         }
     }
+
+    public void animate(Player player){
+        if (getW() < 600) {
+            if ((player.getYVel() >= 0
+                    && player.getY() <= getY() - player.getH()
+                    && player.getX() + player.getW() >= getX()
+                    && player.getX() <= getX() + getW())) {
+                player.setGround((int) getY());
+            }
+        } else {
+            if ((player.getYVel() >= 0
+                    && player.getY() <= getY() + 20 - player.getH()
+                    && player.getX() + 20 >= getX()
+                    && player.getX() - 20 + player.getW() <= getX() + getW())) {
+                player.setGround((int) getY() + 20);
+            }
+        }
+    }
 }

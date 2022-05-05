@@ -57,6 +57,7 @@ public class Animator {
 
     //in game variables
     private List<Player> players;
+    private List<Player> mimics;
     private List<Platform> platList;
     private List<Point> deathPoints;
     private List<Integer> timesJumped;
@@ -200,9 +201,16 @@ public class Animator {
         //if only one player is alive, end game
         if(numPlayersDead >= numPlayers-1 && numPlayers != 1 && endGameTimer == -1)
             endGameTimer = 2;
-        //if single player
+        //if single player end game
         if(numPlayers == 1 && numPlayersDead == 1 && endGameTimer == -1)
             endGameTimer = 2;
+
+        //add mimics to list if there are any
+        mimics = new ArrayList<>();
+        for(Player p : players){
+            if(p.getMimic() != null)
+                mimics.add(p.getMimic());
+        }
 
         //if the game isn't over, play the game
         if(endGameTimer == -1) {
@@ -220,8 +228,9 @@ public class Animator {
                     timesJumped.set(i, 0);
             }
             //animate the platforms
-            for (Platform plat : platList)
+            for (Platform plat : platList) {
                 plat.animate(players);
+            }
             //handle L attacks
             for (int i = 0; i < players.size(); i++) {
                 Player p = players.get(i);
@@ -252,8 +261,10 @@ public class Animator {
                 handleGravity(p);
                 p.animate();
                 //fixes the bug of double animation in single player
-                if (dummy == null)
-                    p.animateAttacks((ArrayList<Player>) players);
+                if (dummy == null) {
+                    mimics.addAll(players);
+                    p.animateAttacks((ArrayList<Player>) mimics);
+                }
                 //fixes the bug where catching boomerang doesn't reset timer
                 if (p.getCharacter() == Player.LAWRENCE && playerTimers.get(i).get(1) == 0)
                     p.setBoomerangs(new ArrayList<>());
@@ -263,11 +274,22 @@ public class Animator {
                 handleDeath(p, i);
                 handleAttackTimers(p, i);
                 handleCheatCodes(i);
-            }
-            //handle the dummy
-            if (numPlayers == 1)
-                handleDummy();
 
+            }
+            //animate the dummy
+            if (numPlayers == 1) {
+                handleDummy();
+            }
+            //animate the mimics
+            for(Player m : mimics){
+                //animate platform for the Bryce mimic
+                for (Platform plat : platList)
+                    plat.animate(m);
+                handleGravity(m);
+                m.animateAttacks((ArrayList<Player>) players);
+            }
+
+            //start game timer is the timer for 3,2,1 go
             if (startGameTimer > 0)
                 startGameTimer -= 1.0 / 80;
             else
@@ -397,10 +419,20 @@ public class Animator {
                 && !me.isStunned()){
             //confusion inverts controls and not instant double jump
             if(!me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
-                if (!bossMode)
+                if (!bossMode) {
                     me.setYVel(-10);
-                else
+                    //mimic also jumps
+                    if(me.getMimic() != null) {
+                        me.getMimic().setYVel(-10);
+                    }
+                }
+                else {
                     me.setYVel(-4.5);
+                    //mimic also jumps
+                    if(me.getMimic() != null) {
+                        me.getMimic().setYVel(-4.5);
+                    }
+                }
                 timesJumped.set(index, timesJumped.get(index) + 1);
                 frameJumpedAt.set(index, frameNumber);
             } else {
@@ -413,10 +445,20 @@ public class Animator {
                 && !me.isStunned()){
             //confusion inverts controls and not instant double jump
             if(me.isConfused() && frameNumber - frameJumpedAt.get(index) > 20) {
-                if (!bossMode)
+                if (!bossMode) {
                     me.setYVel(-10);
-                else
+                    //mimic also jumps
+                    if(me.getMimic() != null) {
+                        me.getMimic().setYVel(-10);
+                    }
+                }
+                else {
                     me.setYVel(-4.5);
+                    //mimic also jumps
+                    if(me.getMimic() != null) {
+                        me.getMimic().setYVel(-4.5);
+                    }
+                }
                 timesJumped.set(index, timesJumped.get(index) + 1);
                 frameJumpedAt.set(index, frameNumber);
             } else {
@@ -485,7 +527,8 @@ public class Animator {
     public void handlePlayerImages(Player me, int index) {
         if (me.getDirection() == Projectile.RIGHT) {
             //if l attacking; or l animating, and I'm not Matei; or I'm spock and lasering; or I'm emi and lasering
-            if (me.isLAttacking() || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
+            if (me.isLAttacking()
+                    || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
                     || (me.getCharacter() == Player.SPOCK && me.getPunch() != null)
                     || (me.getCharacter() == Player.EMI && me.getPunch() != null && me.getPunch().getW() >= 1000)) {
                 me.setMyImageIndex(Player.L_ATTACK_FORWARD);
@@ -516,7 +559,8 @@ public class Animator {
             }
         } else {
             //if l attacking; or l animating, and I'm not Matei; or I'm spock and lasering; or I'm emi and lasering
-            if (me.isLAttacking() || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
+            if (me.isLAttacking()
+                    || (attackAnimationTimers.get(index).get(2) > 0 && me.getCharacter() != Player.MATEI)
                     || (me.getCharacter() == Player.SPOCK && me.getPunch() != null)
                     || (me.getCharacter() == Player.EMI && me.getPunch() != null && me.getPunch().getW() >= 1000)) {
                 me.setMyImageIndex(Player.L_ATTACK_BACKWARD);
@@ -546,6 +590,15 @@ public class Animator {
                 me.setMyImageIndex(Player.STANDING_BACKWARD);
             }
         }
+
+        //Bryce's mitosis animation
+        if(me.isLAttacking()) {
+            if (me.getX() + me.getW() / 2.0 < AnimationPanel.width / 2.0)
+                me.setMyImageIndex(Player.L_ATTACK_BACKWARD);
+            else
+                me.setMyImageIndex(Player.L_ATTACK_FORWARD);
+        }
+
     }
     public void handleDeath(Player me, int index){
         Rectangle screenBounds = new Rectangle(-200,-300,width+450,height+400);
@@ -562,6 +615,8 @@ public class Animator {
                 if(p!=null)
                     p.setIsNull(true);
             }
+            me.setMimic(null);
+            me.resetStickies();
         }
         //If I'm respawning, put me in the respawn spot and make me untargetable
         if(respawnTimers.get(index) > 0 && players.get(index).getLives() > 0){
@@ -625,8 +680,9 @@ public class Animator {
         boolean k = playerMoves.get(index).get(K);
         boolean l = playerMoves.get(index).get(L);
 
-        //J and K attacks
         //if the game has started, you're in game, you're not using lightning, and you're not stunned, you can attack
+
+        //J and K attacks
         if(startGameTimer == 0 && screenNumber == IN_GAME_SCREEN && me.getLightning() == null && !me.isStunned()) {
             //J attack, cooldown = 0, and no motorcycle, and not healing
             if (j && playerTimers.get(index).get(0) == 0 && me.getMoto() == null && !me.isHealing()) {
@@ -646,10 +702,10 @@ public class Animator {
             //K attack, cooldown = 0
             if (k && playerTimers.get(index).get(1) == 0) {
                 me.doKAttack();
-                //set k cooldown to 1.25
-                playerTimers.get(index).set(1,1.25);
-                //k animation
-                attackAnimationTimers.get(index).set(1,0.25);
+
+                playerTimers.get(index).set(1,1.25); //set k cooldown to 1.25 (default)
+                attackAnimationTimers.get(index).set(1,0.25); //k animation (default)
+
                 if (me.getCharacter() == PlayerOld.ADAM || me.getCharacter() == PlayerOld.EMI)
                     playerTimers.get(index).set(1,5.0); //Adam and emi have cooldown of 5
                 else if (me.getCharacter() == PlayerOld.SALOME)
@@ -668,6 +724,10 @@ public class Animator {
                 }
                 else if(me.getCharacter() == Player.NEEL)
                     playerTimers.get(index).set(1,2.0); //Neel has a cooldown of 2
+                else if(me.getCharacter() == Player.BRYCE){
+                    playerTimers.get(index).set(1,7.5); //Bryce has a cooldown of 7.5
+                    attackAnimationTimers.get(index).set(1,0.5);
+                }
             }
         }
         //L attacks
@@ -702,10 +762,14 @@ public class Animator {
 
             ArrayList<Player> justDummy = new ArrayList<>();
             justDummy.add(dummy);
+            justDummy.addAll(mimics);
             for(Platform plat : platList)
                 plat.animate(justDummy);
             players.get(0).animateAttacks(justDummy);
             dummy.animate();
+            //to animate explosions as well
+            justDummy.add(players.get(0));
+            dummy.animateAttacks(justDummy);
 
             if (playerMoves.get(0).get(P))
                 dummy.setPercentage(0);

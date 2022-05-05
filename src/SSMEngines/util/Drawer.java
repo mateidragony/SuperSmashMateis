@@ -32,6 +32,7 @@ public class Drawer {
     private boolean dc;
 
     private List<Integer> sfxIndex;
+    private int dummySFXIndex;
 
     private int serverScreenNumber;
     private Point mouse;
@@ -179,6 +180,7 @@ public class Drawer {
         //draw the dummy if it is not null
         if(dummy != null){
             dummy.draw(g,io);
+            dummy.drawAttacks(g,io);
             g.setFont(new Font("Sans Serif", Font.BOLD, 60));
             g.setColor(Color.white);
             g.drawString("Percentage: "+df.format(dummy.getPercentage()),250,100);
@@ -370,11 +372,21 @@ public class Drawer {
     public void handleSFX(){
         for(int i=0; i<players.size(); i++){
             Player p = players.get(i);
-            ArrayList<Clip> playerSFX = Player.convertSFX(p.getMySFX());
 
-            for(int index = sfxIndex.get(i); index<playerSFX.size(); index++){
-                playSFXClip(playerSFX.get(index));
-                sfxIndex.set(i,sfxIndex.get(i)+1);
+            List<Clip> playerSFX = Player.convertSFX(p.getMySFX().subList(sfxIndex.get(i),p.getMySFX().size()));
+
+            for (Clip sfx : playerSFX) {
+                playSFXClip(sfx);
+                sfxIndex.set(i, sfxIndex.get(i) + 1);
+            }
+
+        }
+        if(dummy != null){
+            List<Clip> playerSFX = Player.convertSFX(dummy.getMySFX().subList(dummySFXIndex,dummy.getMySFX().size()));
+
+            for (Clip sfx : playerSFX) {
+                playSFXClip(sfx);
+                dummySFXIndex++;
             }
         }
     }
@@ -519,8 +531,6 @@ public class Drawer {
     ArrayList<Clip> sfxClips;
 
     public void initMusic() {
-        Projectile.initSFX();
-
         characterMusic = AudioUtility.loadClip("SSMMusic/CharacterSelectTheme.wav");
         inGameMusic = AudioUtility.loadClip("SSMMusic/inGameMusic.wav");
         spockBossMusic = AudioUtility.loadClip("SSMMusic/spockBossTheme.wav");
@@ -540,6 +550,7 @@ public class Drawer {
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/emiSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/neelSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/bryceSFX.wav"));
     }
 
     public void playSFXClip(Clip c){

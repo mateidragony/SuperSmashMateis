@@ -37,7 +37,7 @@ public class Projectile extends Actor{
     private boolean isNull;
     private boolean playedSFX;
     private int dir;
-    private final Color myColor;
+    private Color myColor;
     public static Clip sfx;
    
     public Projectile(int x,int y, int w,int h, int direction, String team_, int shooter, boolean bossMode, boolean sfx){
@@ -56,6 +56,8 @@ public class Projectile extends Actor{
             myColor = Color.red;
         else if(shooter == Player.LISON)
             myColor = new Color(3,190,252);
+        else if (shooter == Player.BRYCE)
+            myColor = Color.green;
         else
             myColor = Color.gray;
     }
@@ -65,11 +67,12 @@ public class Projectile extends Actor{
     public int getDirection(){return dir;}
     public int getShooter(){return shooter;}
     public boolean isBossMode(){return bossMode;}
+    public String getTeam(){return team;}
 
     public void setDirection(int c){dir = c;}
-    public void setPlayedSFX(boolean c){playedSFX = c;}
     public void setIsNull(boolean c){isNull = c;}
-    
+    public void setColor(Color c){myColor = c;}
+
     public void animateMovement(ArrayList<Player> targets){
         //if shooter is Obama, Emi, or Spock not in boss mode
         if(shooter == Player.OBAMA || shooter == Player.EMI
@@ -159,7 +162,6 @@ public class Projectile extends Actor{
         sfx = AudioUtility.loadClip("SSMMusic/SFX/pew.wav");
     }
 
-    
     public static void initImages(){
         Poolkit toolkit = new Poolkit();
         

@@ -342,6 +342,7 @@ public class SSMClient extends AnimationPanel{
     public void initGraphics(){
         Poolkit poolkit = new Poolkit();
 
+        Explosion.initImages(poolkit);
         Player.initImages();
         Drawer.initImages(poolkit);
         Rocket.initImage();

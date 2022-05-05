@@ -1,6 +1,7 @@
 package SSMCode;
 
 import SSMCode.PlayerAttacks.*;
+import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
 import SSMEngines.old.PlayerOld;
 import SSMEngines.util.AudioUtility;
@@ -33,7 +34,8 @@ public class Player extends Actor{
     public static final int EMI = 9;
     public static final int LAWRENCE = 10;
     public static final int NEEL = 11;
-    public static final int DUMMY = 12;
+    public static final int BRYCE = 12;
+    public static final int DUMMY = 13;
 
     //Lol forward is right backward is left
     //No idea why I put forward and backward
@@ -65,6 +67,11 @@ public class Player extends Actor{
     private ArrayList<String> mySFX = new ArrayList<>();
 
     private static final double testPrintTimer = 1;
+
+    private int numStickyProjectiles;
+    private List<Double> stickyTimers;
+    private List<String> stickyTeam;
+    private List<Point> stickyLocs;
 
     private final int playerID;
     private final String team;
@@ -147,7 +154,8 @@ public class Player extends Actor{
     private Stick myStick;
     private RainingCode myRain;
     private ArrayList<Boomerang> myBoomerangs;
-
+    private ArrayList<Explosion> myExplosions;
+    private Player myMimic;
 
     /**
      * Attack Accessors and Modifiers
@@ -163,6 +171,8 @@ public class Player extends Actor{
     public Stick getStick(){return myStick;}
     public RainingCode getRain(){return myRain;}
     public ArrayList<Boomerang> getBoomerangList(){return myBoomerangs;}
+    public ArrayList<Explosion> getExplosions(){return myExplosions;}
+    public Player getMimic(){return myMimic;}
 
     public void setPList(ArrayList<Projectile> pList){myProjectiles = pList;}
     public void setMyPunch(Punch p){myPunch = p;}
@@ -174,7 +184,8 @@ public class Player extends Actor{
     public void setMyStick(Stick p){myStick = p;}
     public void setMyRain(RainingCode p){myRain = p;}
     public void setBoomerangs(ArrayList<Boomerang> bList){myBoomerangs = bList;}
-
+    public void setExplosions(ArrayList<Explosion> eList){myExplosions = eList;}
+    public void setMimic(Player r){myMimic = r;}
 
     /**
      * Accessors
@@ -196,6 +207,7 @@ public class Player extends Actor{
     public double getInputXVel(){return inputXVel;}
     public double getDamageXVel(){return damageXVel;}
     public ArrayList<String> getMySFX(){return mySFX;}
+    public int getNumStickies(){return numStickyProjectiles;}
 
     public boolean isBoss(){return isBoss;}
     public boolean isTaunting(){return taunting;}
@@ -236,6 +248,11 @@ public class Player extends Actor{
     public void setDamageXVel(double c){damageXVel = c;}
     public void setAirInputXVel(double c){airInputXVel = c;}
     public void setMySFX(ArrayList<String> c){mySFX = c;}
+    public void setNumStickies(int c){numStickyProjectiles = c;}
+    public void addStickyTimer(double c){stickyTimers.add(c);}
+    public void setStickyLocs(List<Point> c){stickyLocs = c;}
+    public void addStickyLoc(Point c){stickyLocs.add(c);}
+    public void addStickyTeam(String c){stickyTeam.add(c);}
 
     /**
      * Initializing Methods
@@ -252,6 +269,13 @@ public class Player extends Actor{
         myStick = null;
         myRain = null;
         myBoomerangs = new ArrayList<>();
+        myExplosions = new ArrayList<>();
+        myMimic = null;
+
+        stickyTimers = new ArrayList<>();
+        stickyLocs = new ArrayList<>();
+        stickyTeam = new ArrayList<>();
+        numStickyProjectiles = 0;
     }
     public static void initImages(){
         Poolkit toolkit = new Poolkit();
@@ -273,6 +297,7 @@ public class Player extends Actor{
         myNames.add("Emi");
         myNames.add("Lawrence");
         myNames.add("Neel");
+        myNames.add("Bryce");
         myNames.add("Dummy");
 
         Punch.initImages();
@@ -289,11 +314,12 @@ public class Player extends Actor{
         myImages.add(toolkit.getImage("SSMImages/Emi/Emi.jpg"));
         myImages.add(toolkit.getImage("SSMImages/Lawrence/lawrence.jpg"));
         myImages.add(toolkit.getImage("SSMImages/Neel/Neel.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Bryce/Bryce.png"));
         myImages.add(toolkit.getImage("SSMImages/Dummy.png"));
 
         for(String name: myNames){
             if(!name.equals("Dummy"))
-            myInGameImageLists.add(initPlayerImages(toolkit,name));
+                myInGameImageLists.add(initPlayerImages(toolkit,name));
         }
 
         miscImages.add(toolkit.getImage("SSMImages/stun_1.png"));
@@ -317,6 +343,7 @@ public class Player extends Actor{
         myTaunts.add("Hey! That's Mine!");
         myTaunts.add("*Evil Laugh*");
         myTaunts.add("Neel!");
+        myTaunts.add("Cellular Soil!");
         myTaunts.add("Im a dummy the f*** you expect me to say?");
     }
     private static ArrayList<Image> initPlayerImages(Poolkit toolkit, String playerName){
@@ -336,8 +363,8 @@ public class Player extends Actor{
         images.add(toolkit.getImage("SSMImages/"+playerName+"/L_C_B.png"));
         images.add(toolkit.getImage("SSMImages/"+playerName+"/L_F.png"));
         images.add(toolkit.getImage("SSMImages/"+playerName+"/L_B.png"));
-        
-        return images;        
+
+        return images;
     }
 
 
@@ -345,13 +372,6 @@ public class Player extends Actor{
      * Methods
      */
     public void draw(Graphics g, ImageObserver io){
-
-        //Testing
-        if(character!=DUMMY) {
-            g.setColor(Color.white);
-            g.setFont(new Font("Sans Serif", Font.PLAIN, 20));
-            g.drawString("XVel: "+getXVel(),10,100);
-        }
 
         int[] triangle1XPoints = {20,50,50};
         int[] triangle2XPoints = {1070,1040,1040};
@@ -413,8 +433,21 @@ public class Player extends Actor{
 
         if(isConfused())
             g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
+
+        //draw the sticky projectiles on you
+        for(int i=0; i<stickyLocs.size(); i++){
+            g.setColor(Color.green);
+            g.fillOval(stickyLocs.get(i).x+(int)getX(),stickyLocs.get(i).y+(int)getY(),10,10);
+        }
+
+
+        //testing
+        if(myMimic != null){
+            g.setColor(Color.WHITE);
+            //g.drawString(team+" mimic: "+myMimic.getTeam(),20,100);
+        }
     }
-    public void animate(){
+    public void baseAnimate(){
         setXVel(damageXVel+inputXVel + airInputXVel);
 
         if(getY()+getH() >= getGround()) {
@@ -424,6 +457,9 @@ public class Player extends Actor{
         }
 
         super.animate();
+    }
+    public void animate(){
+        baseAnimate();
         //animate spock's boss mode
         if(isBoss)
             animateBoss();
@@ -469,7 +505,7 @@ public class Player extends Actor{
                 if(myRain.getY()>700)
                     doKAttack();
             }
-            bossAttackTimer = .1;
+            bossAttackTimer = .5;
         }
     }
 
@@ -515,6 +551,7 @@ public class Player extends Actor{
             lAttackTimer = 0;
             myStick = null;
         }
+
     }
 
     public void drawAttacks(Graphics g, ImageObserver io){
@@ -545,6 +582,23 @@ public class Player extends Actor{
             myRain.draw(g,io);
         //Streams through boomerangs and draws them
         myBoomerangs.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
+        //Draw the explosion
+        myExplosions.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
+        //draw mitosis bryce
+        if(myMimic != null){
+            if(lAttackTimer > 0) {
+                if(getX() + getW() / 2.0 < AnimationPanel.width / 2.0)
+                    g.drawImage(myInGameImageLists.get(BRYCE).get(L_ATTACK_FORWARD),
+                            (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(),io);
+                else
+                    g.drawImage(myInGameImageLists.get(BRYCE).get(L_ATTACK_BACKWARD),
+                            (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(),io);
+            }
+            else{
+                g.drawImage(myInGameImageLists.get(BRYCE).get(myImageIndex + direction),
+                        (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(), io);
+            }
+        }
     }
     public void animateAttacks(ArrayList<Player> players){
         //Animate only my Projectiles
@@ -671,7 +725,43 @@ public class Player extends Actor{
             if(getXVel() < -3 || getXVel() > 3)
                 isHealing = false;
         }
-        //Animate Matei's Minigun, Lison's tornado, and Salome's dash
+        //Animate the explosions
+        for(int i=myExplosions.size()-1; i>=0; i--){
+            Explosion e = myExplosions.get(i);
+            if(e != null){
+                e.animate(players);
+                if(e.isNull())
+                    myExplosions.remove(e);
+            } else
+                myExplosions.remove(e);
+        }
+        //animate Bryce's mimic
+        if(myMimic != null){
+            if(lAttackTimer <= 0) {
+                myMimic.animate();
+                //if the mimic dies, it's null
+                Rectangle screenBounds = new Rectangle(-200,-300,AnimationPanel.width+450,AnimationPanel.height+400);
+                if(!screenBounds.contains(myMimic.getHitBox()))
+                    myMimic = null;
+            }
+        }
+        //sticky projectile timers
+        for(int i = stickyTimers.size()-1; i>=0; i--){
+            if(stickyTimers.get(i) > 0)
+                stickyTimers.set(i, stickyTimers.get(i) - 1.0/60);
+            else{
+                Point p = stickyLocs.get(i);
+                myExplosions.add(new Explosion(p.x+(int)getX(),p.y+(int)getY(),100,100,
+                        stickyTeam.get(i),.4,false,character));
+                stickyTimers.remove(i);
+                stickyLocs.remove(i);
+                stickyTeam.remove(i);
+                numStickyProjectiles--;
+                mySFX.add("stickyExplosion");
+            }
+        }
+
+        //Animate Matei's Minigun, Lison's tornado, and Salome's dash, and Bryce's split drawing
         animateLAttacks(players);
     }
     public void animateLAttacks(ArrayList<Player> players){
@@ -687,6 +777,7 @@ public class Player extends Actor{
                             9,9,getDirection(),getTeam(), character,false,false);
 
                 myProjectiles.add(myProj);
+                mySFX.add("gun");
             }
         }
         //Animate Lison's tornado
@@ -714,6 +805,13 @@ public class Player extends Actor{
                     enemy.setDamageXVel(1.5*getXVel()/60*(0.5+1.5*enemy.getPercentage()/20));
                     enemy.setYVel(.5*(enemy.getYVel()-1.5-2*enemy.getPercentage()/50));
                 }
+            }
+        }
+        //Animate drawing Bryce's split
+        if(character == BRYCE){
+            if(lAttackTimer > 0){
+                myMimic.setX((int)getX() + (int)((AnimationPanel.width - getX()*2 - getW()) * ((MAX_L - lAttackTimer)/MAX_L)));
+                lAttackTimer += 1.0/120;
             }
         }
     }
@@ -763,12 +861,27 @@ public class Player extends Actor{
                     getW(),getH(),getDirection(),getTeam(),character, isBoss,false);
             myProjectiles.add(myProj);
         }
+        //If I am Bryce my J attack is a sticky projectile that blows up later
+        else if(character == BRYCE){
+            StickyProjectile myProj = new StickyProjectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    20,20,getDirection(),getTeam(),character, false);
+            myProjectiles.add(myProj);
+            mySFX.add("stickyShot");
+
+            if(myMimic != null) {
+                myProj = new StickyProjectile((int) myMimic.getX() + getW() / 2, (int) myMimic.getY() + getH() / 4 - 10,
+                        20, 20, -1 * getDirection(), getTeam(), character, false);
+                myProjectiles.add(myProj);
+                mySFX.add("stickyShot");
+            }
+        }
         //If I am not a character, my J attack is a simple projectile
         else {
             Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
                     10,10,getDirection(),getTeam(),character, false, false);
             myProjectiles.add(myProj);
-            mySFX.add("gun");
+            if(character == JACK)
+                mySFX.add("gun");
         }
 
         isHealing = false;
@@ -785,6 +898,8 @@ public class Player extends Actor{
                     getTeam(),character);
             if(character == NEEL)
                 rocket.setSize(65,10);
+            if(character == MATEI)
+                mySFX.add("rocket");
 
             myRockets.add(rocket);
         }
@@ -835,6 +950,18 @@ public class Player extends Actor{
                     (int)getX()+getDirection()*800, false, getTeam(),
                     false, 1, character));
         }
+        //Bryce switch + explosion
+        else if(character == BRYCE){
+            double oldX = getX(); double oldY = getY();
+            setX(myMimic.getX()); setY(myMimic.getY());
+            myMimic.setX(oldX); myMimic.setY(oldY);
+
+            myExplosions.add(new Explosion((int) (oldX + getW() / 2.0), (int) (oldY + getH() / 2.0), 150,
+                    150, team, .4, false, character));
+            myExplosions.add(new Explosion((int) (getX() + getW() / 2.0), (int) (getY() + getH() / 2.0), 150,
+                    150, team, .4, false, character));
+            mySFX.add("stickyExplosion");
+        }
     }
     public void chargeLAttack(){
         if(character == ADAM || character == UMER )
@@ -849,7 +976,7 @@ public class Player extends Actor{
             chargingLAttackStrength+=1.0/450;
         if(chargingLAttackStrength > MAX_L || character == LISON
                 || character == OBAMA || character == LAWRENCE
-                || character == NEEL)
+                || character == NEEL || character == BRYCE)
             chargingLAttackStrength = MAX_L;
 
         isHealing = false;
@@ -913,6 +1040,17 @@ public class Player extends Actor{
             }
             lAttackCooldown = 5.0;
         }
+        else if(character == BRYCE){
+            myMimic = new Player((int)getX(),(int)getY(),getW(),getH(),playerID);
+            lAttackCooldown = 20.0;
+        }
+    }
+
+    public void resetStickies(){
+        stickyTimers = new ArrayList<>();
+        stickyLocs = new ArrayList<>();
+        stickyTeam = new ArrayList<>();
+        numStickyProjectiles = 0;
     }
 
     //movement
@@ -927,6 +1065,10 @@ public class Player extends Actor{
             airInputXVel += .1;
         else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -5 && dir == Projectile.LEFT)
             airInputXVel -= .1;
+
+        if(myMimic != null){
+            myMimic.move(-dir);
+        }
     }
     public void motoMove(int dir){
         if(dir == -1 && getXVel() > -15)
@@ -946,9 +1088,16 @@ public class Player extends Actor{
      */
 
     public static final String parseChar = "/";
+    private int printTimer = 0;
 
     public String pack(){
         String packedPlayersInfo = "";
+
+        if(printTimer <= 0){
+            printTimer = 150;
+            //System.out.println("SFX size: "+mySFX.size());
+        } else
+            printTimer--;
 
         //Pack the player's individual data
         packedPlayersInfo += (int)getX()+ SSMClient.parseChar; //0
@@ -975,6 +1124,8 @@ public class Player extends Actor{
         packedPlayersInfo += flameDrawTimer + SSMClient.parseChar; //21
         packedPlayersInfo += lAttackCooldown + SSMClient.parseChar; //22
         packedPlayersInfo += packSFX() + SSMClient.parseChar; //23
+        packedPlayersInfo += numStickyProjectiles + SSMClient.parseChar; //24
+        packedPlayersInfo += packStickyLocs() + SSMClient.parseChar; //25
 
         packedPlayersInfo += parseChar;
 
@@ -990,8 +1141,8 @@ public class Player extends Actor{
         packedPlayersInfo += Stick.pack(myStick) + parseChar;
         packedPlayersInfo += RainingCode.pack(myRain) + parseChar;
         packedPlayersInfo += Boomerang.packArray(myBoomerangs) + parseChar;
-
-        //System.out.println(packedPlayersInfo);
+        packedPlayersInfo += Explosion.packArray(myExplosions) + parseChar;
+        packedPlayersInfo += packMimic() + parseChar;
 
         return packedPlayersInfo;
     }
@@ -1021,6 +1172,8 @@ public class Player extends Actor{
         player.setFlameDrawTimer(Double.parseDouble(data[21]));
         player.setLCooldown(Double.parseDouble(data[22]));
         player.setMySFX(player.unPackSFX(data[23]));
+        player.setNumStickies(Integer.parseInt(data[24]));
+        player.setStickyLocs(player.unPackStickyLocs(data[25]));
 
         player.setPList(Projectile.unPackArray(playerData[1]));
         player.setRocketList(Rocket.unPackArray(playerData[2]));
@@ -1033,6 +1186,8 @@ public class Player extends Actor{
         player.setMyStick(Stick.unPack(playerData[9]));
         player.setMyRain(RainingCode.unPack(playerData[10]));
         player.setBoomerangs(Boomerang.unPackArray(playerData[11]));
+        player.setExplosions(Explosion.unPackArray(playerData[12]));
+        player.setMimic(player.unPackMimic(playerData[13],player));
 
         return player;
     }
@@ -1041,26 +1196,63 @@ public class Player extends Actor{
     //"gun" = Matei, Salome, Jack projectiles
     public String packSFX(){
         String data = " ";
-        for(String s : mySFX)
-            data = data.concat(s + Projectile.arrayParseChar);
+        for(int i=0; i<mySFX.size(); i++)
+            data = data.concat(mySFX.get(i) + Projectile.arrayParseChar);
         return data;
     }
     public ArrayList<String> unPackSFX(String s){
         String[] data = s.split(Projectile.arrayParseChar);
         return new ArrayList<>(Arrays.asList(data));
     }
-    public static ArrayList<Clip> convertSFX(ArrayList<String> data){
+    public static ArrayList<Clip> convertSFX(List<String> data){
         ArrayList<Clip> sfx = new ArrayList<>();
         for(String str : data){
+            str = str.trim();
             switch(str){
-                case("gun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/pew.wav"));
-                case("rocket") -> sfx.add(Projectile.sfx);
-                case("jeez") -> sfx.add(Projectile.sfx);
-                case("us") -> sfx.add(Projectile.sfx);
+                case("gun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/pew.wav"));
+                case("rocket") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/rocketSFX.wav"));
+                case("stickyShot") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyShot.wav"));
+                case("stickyExplosion") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyExplosion.wav"));
                 case("among") -> sfx.add(Projectile.sfx);
             }
         }
         return sfx;
+    }
+    public String packStickyLocs(){
+        String data = " ";
+        for(int i = stickyLocs.size()-1; i>=0; i--) {
+            Point p = stickyLocs.get(i);
+            data = data.concat(p.x + "#" + p.y + Projectile.arrayParseChar);
+        }
+        return data;
+    }
+    public List<Point> unPackStickyLocs(String s){
+        String[] data = s.split(Projectile.arrayParseChar);
+        List<Point> locs = new ArrayList<>();
+        for(String str : data) {
+            if(!str.equals(" ")) {
+                String[] point = str.split("#");
+                locs.add(new Point(Integer.parseInt(point[0].trim()), Integer.parseInt(point[1].trim())));
+            }
+        }
+        return locs;
+    }
+    public String packMimic(){
+        String data = " ";
+        if(myMimic == null)
+            return "null";
+        data += myMimic.getX() + Projectile.arrayParseChar;
+        data += myMimic.getY() + Projectile.arrayParseChar;
+        data += myMimic.getW() + Projectile.arrayParseChar;
+        data += myMimic.getH() + Projectile.arrayParseChar;
+        return data;
+    }
+    public Player unPackMimic(String in, Player me){
+        String[] data = in.trim().split(Projectile.arrayParseChar);
+        if(in.equals("null"))
+            return null;
+        return new Player(Double.parseDouble(data[0]),Double.parseDouble(data[1]),
+                Integer.parseInt(data[2]),Integer.parseInt(data[3]), me.playerID);
     }
 }
 
