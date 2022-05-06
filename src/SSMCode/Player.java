@@ -35,7 +35,8 @@ public class Player extends Actor{
     public static final int LAWRENCE = 10;
     public static final int NEEL = 11;
     public static final int BRYCE = 12;
-    public static final int DUMMY = 13;
+    public static final int RISHI = 13;
+    public static final int DUMMY = 14;
 
     //Lol forward is right backward is left
     //No idea why I put forward and backward
@@ -298,6 +299,7 @@ public class Player extends Actor{
         myNames.add("Lawrence");
         myNames.add("Neel");
         myNames.add("Bryce");
+        myNames.add("Rishi");
         myNames.add("Dummy");
 
         Punch.initImages();
@@ -315,6 +317,7 @@ public class Player extends Actor{
         myImages.add(toolkit.getImage("SSMImages/Lawrence/lawrence.jpg"));
         myImages.add(toolkit.getImage("SSMImages/Neel/Neel.jpg"));
         myImages.add(toolkit.getImage("SSMImages/Bryce/Bryce.png"));
+        myImages.add(toolkit.getImage("SSMImages/Rishi/rishi.png"));
         myImages.add(toolkit.getImage("SSMImages/Dummy.png"));
 
         for(String name: myNames){
@@ -344,6 +347,7 @@ public class Player extends Actor{
         myTaunts.add("*Evil Laugh*");
         myTaunts.add("Neel!");
         myTaunts.add("Cellular Soil!");
+        myTaunts.add("Ur mom");
         myTaunts.add("Im a dummy the f*** you expect me to say?");
     }
     private static ArrayList<Image> initPlayerImages(Poolkit toolkit, String playerName){
@@ -809,7 +813,7 @@ public class Player extends Actor{
         }
         //Animate drawing Bryce's split
         if(character == BRYCE){
-            if(lAttackTimer > 0){
+            if(lAttackTimer > 0 && myMimic != null){
                 myMimic.setX((int)getX() + (int)((AnimationPanel.width - getX()*2 - getW()) * ((MAX_L - lAttackTimer)/MAX_L)));
                 lAttackTimer += 1.0/120;
             }
@@ -875,13 +879,15 @@ public class Player extends Actor{
                 mySFX.add("stickyShot");
             }
         }
-        //If I am not a character, my J attack is a simple projectile
+        //If I am not a character jack or adam, my J attack is a simple projectile
         else {
             Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
                     10,10,getDirection(),getTeam(),character, false, false);
             myProjectiles.add(myProj);
             if(character == JACK)
                 mySFX.add("gun");
+            if(character == ADAM)
+                mySFX.add("fireball");
         }
 
         isHealing = false;
@@ -907,6 +913,7 @@ public class Player extends Actor{
         else if(getCharacter() == ADAM){
             myLightning = new Lightning((int)getX(),(int)getY(),getDirection(),getTeam(),
                     1, false,1.9,character);
+            mySFX.add("electricity");
         }
         //Jack Motorcycle
         else if(getCharacter() == JACK){
@@ -999,6 +1006,9 @@ public class Player extends Actor{
             myLAttack = new GrowingLAttack((int)getX(),(int)getY()+getH()/2-size/2-17,
                     direction,getTeam(),size,character);
             lAttackTimer = 0;
+
+            if(character == ADAM)
+                mySFX.add("sun");
         }
         else if(character == JACK){
             setYVel(-lAttackStrength*60);
@@ -1219,7 +1229,9 @@ public class Player extends Actor{
                 case("rocket") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/rocketSFX.wav"));
                 case("stickyShot") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyShot.wav"));
                 case("stickyExplosion") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyExplosion.wav"));
-                case("among") -> sfx.add(Projectile.sfx);
+                case("fireball") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/fireballSFX.wav"));
+                case("electricity") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/electricity.wav"));
+                case("sun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
             }
         }
         return sfx;

@@ -2,7 +2,6 @@ package SSMEngines.util;
 
 import SSMCode.Platform;
 import SSMCode.Player;
-import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
 
@@ -31,7 +30,7 @@ public class Drawer {
     private boolean bossMode;
     private boolean dc;
 
-    private List<Integer> sfxIndex;
+    private final List<Integer> sfxIndex;
     private int dummySFXIndex;
 
     private int serverScreenNumber;
@@ -372,9 +371,12 @@ public class Drawer {
     public void handleSFX(){
         for(int i=0; i<players.size(); i++){
             Player p = players.get(i);
-
+            //reset the sfx index if the sfx is empty (1 because of the first " " string)
+            if(p.getMySFX().size() == 1 && p.getMySFX().get(0).equals(" "))
+                sfxIndex.set(i,0);
+            //convert the string list of sfx to a list of clips of unplayed clips
             List<Clip> playerSFX = Player.convertSFX(p.getMySFX().subList(sfxIndex.get(i),p.getMySFX().size()));
-
+            //play the clips and increment index
             for (Clip sfx : playerSFX) {
                 playSFXClip(sfx);
                 sfxIndex.set(i, sfxIndex.get(i) + 1);
@@ -382,6 +384,9 @@ public class Drawer {
 
         }
         if(dummy != null){
+            if(dummy.getMySFX().size() == 1 && dummy.getMySFX().get(0).equals(" "))
+                dummySFXIndex = 0;
+
             List<Clip> playerSFX = Player.convertSFX(dummy.getMySFX().subList(dummySFXIndex,dummy.getMySFX().size()));
 
             for (Clip sfx : playerSFX) {
@@ -550,6 +555,7 @@ public class Drawer {
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/emiSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/lawrenceSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/neelSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/bryceSFX.wav"));
         sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/bryceSFX.wav"));
     }
 

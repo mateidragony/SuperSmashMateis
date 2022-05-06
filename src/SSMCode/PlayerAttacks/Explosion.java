@@ -45,13 +45,13 @@ public class Explosion extends GameObject {
                     && !target.isUntargetable()
                     && !isNull) {
 
-                target.setPercentage(target.getPercentage() + 1.5);
-                target.setYVel(target.getYVel() - .5* (1.5 + target.getPercentage() / 100));
+                target.setPercentage(target.getPercentage() + 1.2);
+                target.setYVel(target.getYVel() - .35* (1.5 + target.getPercentage() / 100));
                 //Damage Component depends on which side of explosion you're on
                 if(target.getX() < getX())
-                    target.setDamageXVel((2.5 + 1 * target.getPercentage() / 25) * -1.25);
+                    target.setDamageXVel((2.5 + .7 * target.getPercentage() / 25) * -1.1);
                 else
-                    target.setDamageXVel((2.5 + 1 * target.getPercentage() / 25) * 1.25);
+                    target.setDamageXVel((2.5 + .7 * target.getPercentage() / 25) * 1.1);
             }
         }
     }

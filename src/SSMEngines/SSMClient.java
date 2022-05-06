@@ -113,9 +113,7 @@ public class SSMClient extends AnimationPanel{
             OutputStream outStream = socket.getOutputStream();
             
             ObjectOutputStream out = new ObjectOutputStream(outStream);
-            System.out.println("oos made");
             ObjectInputStream in = new ObjectInputStream(inStream);
-            System.out.println("ois made");
 
             playerID = in.readInt();
             System.out.println("You are player #"+playerID);
@@ -141,7 +139,7 @@ public class SSMClient extends AnimationPanel{
 
         public void run(){
 
-            while(true){
+            while(!dcFromServer){
                 try {
                     allConnected = dataIn.readBoolean();
                     String str = dataIn.readUTF();
@@ -171,7 +169,7 @@ public class SSMClient extends AnimationPanel{
 
         public void run(){
 
-            while(true){
+            while(!dcFromServer){
                 try {
                     dataOut.writeUTF(packInfo());
                     dataOut.flush();
@@ -189,11 +187,10 @@ public class SSMClient extends AnimationPanel{
     }
 
 
-    /*
-    SSMClient Parse Char = "," (Separates each individual primitive data type)
-    Animator Parse Char = ";" (Separates the game data and each individual players' data)
-    Player Parse Char = "/" (Separates player data and each attack/attack array)
-    Projectile Parse Char = "&" (Separates each attack in an array of attacks)
+    /*   SSMClient Parse Char = "," (Separates each individual primitive data type)
+     *   Animator Parse Char = ";" (Separates the game data and each individual players' data)
+     *   Player Parse Char = "/" (Separates player data and each attack/attack array)
+     *   Projectile Parse Char = "&" (Separates each attack in an array of attacks)
      */
 
     public static final String parseChar = ",";

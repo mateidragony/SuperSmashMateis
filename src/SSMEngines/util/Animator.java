@@ -43,7 +43,6 @@ public class Animator {
     private int frameNumber;
     private final int numPlayers;
     private int screenNumber;
-    private String bossCode = "Zbogck";
     private boolean justEnteredScreen;
 
     //timers
@@ -248,6 +247,14 @@ public class Animator {
                     attackAnimationTimers.get(i).set(2, 0.25);
                 }
             }
+            //animate the mimics
+            for(Player m : mimics){
+                //animate platform for the Bryce mimic
+                for (Platform plat : platList)
+                    plat.animate(m);
+                handleGravity(m);
+                m.animateAttacks((ArrayList<Player>) players);
+            }
             //animate the players
             for (int i = 0; i < players.size(); i++) {
                 Player p = players.get(i);
@@ -279,14 +286,6 @@ public class Animator {
             //animate the dummy
             if (numPlayers == 1) {
                 handleDummy();
-            }
-            //animate the mimics
-            for(Player m : mimics){
-                //animate platform for the Bryce mimic
-                for (Platform plat : platList)
-                    plat.animate(m);
-                handleGravity(m);
-                m.animateAttacks((ArrayList<Player>) players);
             }
 
             //start game timer is the timer for 3,2,1 go
@@ -328,6 +327,7 @@ public class Animator {
             me.setFlameDuration(0);
             me.setConfusionDuration(0);
             me.setCharacter(Player.DUMMY);
+            me.setMySFX(new ArrayList<>());
 
             endGameTimer = -1;
 
@@ -392,10 +392,11 @@ public class Animator {
         if(playerMoves.get(index).get(LEFT) && !me.isStunned()
                 && !me.isDashing() && me.getMoto() == null
                 && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
-            me.move(-1);
-            me.setDirection(Projectile.LEFT);
-            //confusion inverts controls
-            if(me.isConfused()){
+            if(!me.isConfused()) { //not confused
+                me.move(-1);
+                me.setDirection(Projectile.LEFT);
+            }
+            else { //confusion inverts controls
                 me.move(1);
                 me.setDirection(Projectile.RIGHT);
             }
@@ -404,10 +405,11 @@ public class Animator {
         if(playerMoves.get(index).get(RIGHT) && !me.isStunned()
                 && !me.isDashing() && me.getMoto() == null
                 && !(me.getCharacter() == Player.LISON && me.isLAttacking())) {
-            me.move(1);
-            me.setDirection(Projectile.RIGHT);
-            //confusion inverts controls
-            if(me.isConfused()){
+            if(!me.isConfused()) { //not confused
+                me.move(1);
+                me.setDirection(Projectile.RIGHT);
+            }
+            else { //confusion inverts controls
                 me.move(-1);
                 me.setDirection(Projectile.LEFT);
             }
@@ -802,6 +804,7 @@ public class Animator {
             cheatCodes.set(playerID,"");
         }
         //Boss code and is Spock
+        String bossCode = "Zbogck";
         if(cheatCode.contains(bossCode) && players.get(playerID).getCharacter() == Player.SPOCK){
             if(!players.get(playerID).isBoss())
                 players.get(playerID).setIsBoss(true);
