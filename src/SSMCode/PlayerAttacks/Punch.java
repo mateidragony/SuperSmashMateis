@@ -29,9 +29,10 @@ public class Punch extends GameObject{
     
     private double punchCD;
     
-    public Punch(int x,int y, int direction, String team_, double cd, boolean hurts, int shooter, int sW, int sH){
-        super(x,y,30,5);
-        
+    public Punch(int x,int y, int direction, String team_, double cd, boolean hurts, int shooter, int sW, int sH, int w, int h){
+        super(x,y,w,h);
+        //30 and 5
+
         dir = direction;
         team = team_;
         canHurt = hurts;
@@ -52,30 +53,84 @@ public class Punch extends GameObject{
         
         //Massive Laser
         if(shooter == Player.SPOCK || (shooter == Player.EMI && getW() >=1000)){
-            if(dir == Projectile.RIGHT)
-                return new Rectangle((int)getX()+40,(int)(getY()+50-3+shooterH/3-getH()/1.5),
-                        (getW()),getH()-50);
-            else
-                return new Rectangle((int)(getX()+3-getW()),(int)(getY()+50-3+shooterH/3-getH()/1.5),
-                        (getW()),getH()-50);
+
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() + 7 - getW()), (int) (getY() - 6 + shooterH / 3 - getH() / 1.5),
+                        (getW()), getH());
+            }
+            else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() + 40, (int) (getY() - 6 + shooterH / 3 - getH() / 1.5),
+                        (getW()), getH());
+            }
+
         }
         //Elastijemi
-        if(dir == Projectile.LEFT && shooter == Player.EMI) {
-            return new Rectangle((int) (getX() - getW() + punchCD * 50), (int) (getY() + 30),
-                    (int) (getW() + 10 - punchCD * 50), getH());
-        } else if(dir == Projectile.RIGHT && shooter == Player.EMI) {
-            return new Rectangle((int) getX() + 40, (int) (getY() + 30),
-                    (int) (getW() - punchCD * 50), getH());
+        if(shooter == Player.EMI) {
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() + 14 - getW() + punchCD * 50), (int) (getY() - 14 + shooterH / 3),
+                        (int) (getW() + 10 - punchCD * 50), getH() * 2);
+            }
+            else{
+                return new Rectangle((int) getX() - 24 + shooterW, (int) (getY() - 14 + shooterH / 3),
+                        (int) (getW() - punchCD * 50), getH() * 2);
+            }
         }
-        //Lawrence
-        if(dir == Projectile.LEFT && shooter == Player.LAWRENCE){
-            return new Rectangle((int)(getX()-getW()+punchCD*10),(int)(getY()-12+shooterH/3),
-                    (int)(getW()+10-punchCD*10),getH()*2);
-        } else if(dir == Projectile.RIGHT && shooter== Player.LAWRENCE) {
-            return new Rectangle((int)getX()+shooterW,(int)(getY()-12+shooterH/3),
-                    (int)(getW()-punchCD*10),getH()*2);
+        //Lawrence sword
+        if(shooter == Player.LAWRENCE) {
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() - getW() + punchCD * 10), (int) (getY() - 12 + shooterH / 3),
+                        (int) (getW() + 10 - punchCD * 10), getH() * 2);
+            } else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() + shooterW, (int) (getY() - 12 + shooterH / 3),
+                        (int) (getW() - punchCD * 10), getH() * 2);
+            }
         }
-        //Normal
+        //rishi net
+        if(shooter == Player.RISHI){
+            int w = (int)((8 - punchCD) * 40);
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() - w), (int) (getY() - 12 + shooterH / 3),
+                        w, getH() * 2);
+            } else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() + shooterW, (int) (getY() - 12 + shooterH / 3),
+                        w, getH() * 2);
+            }
+        }
+        //Umer punch
+        if(shooter == Player.UMER) {
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() + 9 - getW() + punchCD * 10), (int) (getY() - 17 + shooterH / 3),
+                        (int) (getW() + 10 - punchCD * 10), getH() * 2);
+            } else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() - 17 + shooterW, (int) (getY() - 17 + shooterH / 3),
+                        (int) (getW() - punchCD * 10), getH() * 2);
+            }
+        }
+        //Kaushal stick
+        if(shooter == Player.KAUSHAL){
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() - getW() + punchCD * 10), (int) (getY() - 5 + shooterH / 3),
+                        (int) (getW() + 10 - punchCD * 10), (int) (getH() * 1.5));
+            }
+            else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() + shooterW, (int) (getY() - 5 + shooterH / 3),
+                        (int) (getW() - punchCD * 10), (int) (getH() * 1.5));
+            }
+        }
+        //Salome kick
+        if(shooter == Player.SALOME){
+            if (dir == Projectile.LEFT) {
+                return new Rectangle((int) (getX() + 3 - getW() + punchCD * 10), (int) (getY() - 3 + shooterH / 3),
+                        (int) (getW() + 10 - punchCD * 10), 24);
+            }
+            else if (dir == Projectile.RIGHT) {
+                return new Rectangle((int) getX() - 14 + shooterW, (int) (getY() - 3 + shooterH / 3),
+                        (int) (getW() - punchCD * 10), 24);
+            }
+        }
+
+
+        //Default
         if(dir == Projectile.LEFT) {
             return new Rectangle((int) (getX() - getW() + punchCD * 10), (int) (getY() + 30),
                     (int) (getW() + 10 - punchCD * 10), getH());
@@ -112,6 +167,11 @@ public class Punch extends GameObject{
                     target.setPercentage(target.getPercentage() + 1);
                     target.setDamageXVel(1.5 * (0.5 + 1.5 * target.getPercentage() / 20) * dir);
                     target.setYVel(.5 * (target.getYVel() - 1.5 - 2 * target.getPercentage() / 50));
+
+                    if(shooter == Player.RISHI){
+                        target.setStunDuration(.75);
+                        target.setStunner(Player.RISHI);
+                    }
                 }
             }
         }
@@ -128,68 +188,75 @@ public class Punch extends GameObject{
 
         
         if(punchCD > 0){
-            
+            int x = getHitBox().x; int y = getHitBox().y;
+            int w = getHitBox().width; int h = getHitBox().height;
+
             //Umer
-            if(dir == Projectile.LEFT && shooter == Player.UMER){
-                g.drawImage(myImages.get(1),(int)(getX()+9-getW()+punchCD*10),(int)(getY()-17+shooterH/3),
-                        (int)(getW()+10-punchCD*10),getH()*2,io);
-            } else if(dir == Projectile.RIGHT && shooter == Player.UMER) {
-                g.drawImage(myImages.get(0),(int)getX()-17+shooterW,(int)(getY()-17+shooterH/3),
-                        (int)(getW()-punchCD*10),getH()*2,io);
+            if(shooter == Player.UMER) {
+                if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(1), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(0), x,y,w,h, io);
+                }
             }
-           
             //Gaushal
-            if(dir == Projectile.LEFT && shooter == Player.KAUSHAL){
-                g.drawImage(myImages.get(4),(int)(getX()-getW()+punchCD*10),(int)(getY()-5+shooterH/3),
-                        (int)(getW()+10-punchCD*10),(int)(getH()*1.5),io);
-            } else if(dir == Projectile.RIGHT && shooter == Player.KAUSHAL) {
-                g.drawImage(myImages.get(4),(int)getX()+shooterW,(int)(getY()-5+shooterH/3),
-                        (int)(getW()-punchCD*10),(int)(getH()*1.5),io);
+            else if(shooter == Player.KAUSHAL) {
+                if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(4), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(4), x,y,w,h, io);
+                }
             }
-            
             //Salome
-            if(dir == Projectile.LEFT && shooter== Player.SALOME){
-                g.drawImage(myImages.get(6),(int)(getX()+3-getW()+punchCD*10),(int)(getY()-3+shooterH/3),
-                        (int)(getW()+10-punchCD*10),24,io);
-            } else if(dir == Projectile.RIGHT && shooter== Player.SALOME) {
-                g.drawImage(myImages.get(5),(int)getX()-14+shooterW,(int)(getY()-3+shooterH/3),
-                        (int)(getW()-punchCD*10),24,io);
+            else if(shooter == Player.SALOME) {
+                if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(6), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(5), x,y,w,h, io);
+                }
             }
-            
-            //Spock
-            if(dir == Projectile.LEFT && shooter== Player.SPOCK){
-                g.drawImage(myImages.get(8),(int)(getX()+3-getW()),(int)(getY()-3+shooterH/3-getH()/1.5),
-                        (getW()),getH(),io);
-            } else if(dir == Projectile.RIGHT && shooter== Player.SPOCK) {
-                g.drawImage(myImages.get(7),(int)getX()+40,(int)(getY()-3+shooterH/3-getH()/1.5),
-                        (getW()),getH(),io);
+            //Spock Laser
+            else if(shooter == Player.SPOCK) {
+                if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(8), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(7), x,y,w,h, io);
+                }
             }
-            
-            //Jemi (Jumex)
-            if(dir == Projectile.LEFT && shooter == Player.EMI && getW() >= 1000){
-                g.drawImage(myImages.get(10),(int)(getX()+13-getW()),(int)(getY()-10+shooterH/3-getH()/1.5),
-                        (getW()),getH(),io);
-            } else if(dir == Projectile.RIGHT && shooter== Player.EMI && getW() >= 1000) {
-                g.drawImage(myImages.get(9),(int)getX()+40,(int)(getY()-10+shooterH/3-getH()/1.5),
-                        (getW()),getH(),io);
-            }
-            //Jemi (Elastijemi)
-            else if(dir == Projectile.LEFT && shooter == Player.EMI){
-                g.drawImage(myImages.get(12),(int)(getX()+14-getW()+punchCD*50),(int)(getY()-14+shooterH/3),
-                        (int)(getW()+10-punchCD*50),getH()*2,io);
-            } else if(dir == Projectile.RIGHT && shooter== Player.EMI) {
-                g.drawImage(myImages.get(11),(int)getX()-24+shooterW,(int)(getY()-14+shooterH/3),
-                        (int)(getW()-punchCD*50),getH()*2,io);
+            //Jemi
+            else if(shooter == Player.EMI) {
+                //Jumex
+                if (dir == Projectile.LEFT && getW() >= 1000) {
+                    g.drawImage(myImages.get(10), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT && getW() >= 1000) {
+                    g.drawImage(myImages.get(9), x,y,w,h, io);
+                }
+                //Elastijemi
+                else if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(12), x,y,w,h, io);
+                }
+                else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(11), x,y,w,h, io);
+                }
             }
             //Lawrence
-            else if(dir == Projectile.LEFT && shooter== Player.LAWRENCE){
-                g.drawImage(myImages.get(14),(int)(getX()-getW()+punchCD*10),(int)(getY()-12+shooterH/3),
-                        (int)(getW()+10-punchCD*10),getH()*2,io);
-            } else if(dir == Projectile.RIGHT && shooter== Player.LAWRENCE) {
-                g.drawImage(myImages.get(13),(int)getX()+shooterW,(int)(getY()-12+shooterH/3),
-                        (int)(getW()-punchCD*10),getH()*2,io);
+            else if(shooter == Player.LAWRENCE) {
+                if (dir == Projectile.LEFT) {
+                    g.drawImage(myImages.get(14), x,y,w,h, io);
+                } else if (dir == Projectile.RIGHT) {
+                    g.drawImage(myImages.get(13), x,y,w,h, io);
+                }
             }
-            
+            //Rishi net
+            else if(shooter == Player.RISHI){
+                g.drawImage(myImages.get(15), x,y,w,h, io);
+            }
+
         }
     }
     
@@ -218,6 +285,8 @@ public class Punch extends GameObject{
         
         myImages.add(toolkit.getImage("SSMImages/Lawrence/Sword_F.png"));
         myImages.add(toolkit.getImage("SSMImages/Lawrence/Sword_B.png"));
+
+        myImages.add(toolkit.getImage("SSMImages/Rishi/net.png"));
     }
 
 
@@ -246,11 +315,9 @@ public class Punch extends GameObject{
         if(s.equals("null") || s.isEmpty())
             return null;
         String[] data = s.split(SSMClient.parseChar);
-        Punch p = new Punch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
+        return new Punch(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
                 data[3], Double.parseDouble(data[4]), Boolean.parseBoolean(data[5]), Integer.parseInt(data[6]),
-                Integer.parseInt(data[7]), Integer.parseInt(data[8]));
-        p.setSize(Integer.parseInt(data[9]), Integer.parseInt(data[10]));
-        return p;
+                Integer.parseInt(data[7]), Integer.parseInt(data[8]), Integer.parseInt(data[9]), Integer.parseInt(data[10]));
     }
 
 

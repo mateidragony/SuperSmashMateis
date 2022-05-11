@@ -149,7 +149,7 @@ public class Player extends Actor{
     private Punch myPunch;
     private VerticalPunch myVPunch;
     private Lightning myLightning;
-    private GrowingLAttack myLAttack;
+    private ArrayList<GrowingLAttack> myLAttacks;
     private Motorcycle myMoto;
     private boolean isHealing;
     private Stick myStick;
@@ -166,7 +166,7 @@ public class Player extends Actor{
     public ArrayList<Rocket> getRocketList(){return myRockets;}
     public VerticalPunch getVPunch(){return myVPunch;}
     public Lightning getLightning(){return myLightning;}
-    public GrowingLAttack getLAttack(){return myLAttack;}
+    public ArrayList<GrowingLAttack> getLAttacks(){return myLAttacks;}
     public Motorcycle getMoto(){return myMoto;}
     public boolean isHealing(){return isHealing;}
     public Stick getStick(){return myStick;}
@@ -181,7 +181,7 @@ public class Player extends Actor{
     public void setMyVPunch(VerticalPunch p){myVPunch = p;}
     public void setMyLightning(Lightning p){myLightning = p;}
     public void setMyMoto(Motorcycle p){myMoto = p;}
-    public void setLAttack(GrowingLAttack g){myLAttack = g;}
+    public void setLAttacks(ArrayList<GrowingLAttack> g){myLAttacks = g;}
     public void setMyStick(Stick p){myStick = p;}
     public void setMyRain(RainingCode p){myRain = p;}
     public void setBoomerangs(ArrayList<Boomerang> bList){myBoomerangs = bList;}
@@ -264,7 +264,7 @@ public class Player extends Actor{
         myPunch = null;
         myVPunch = null;
         myLightning = null;
-        myLAttack = null;
+        myLAttacks = new ArrayList<>();
         myMoto = null;
         isHealing = false;
         myStick = null;
@@ -333,6 +333,7 @@ public class Player extends Actor{
         miscImages.add(toolkit.getImage("SSMImages/confusion.png"));
         miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming1.png"));
         miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming2.png"));
+        miscImages.add(toolkit.getImage("SSMImages/Rishi/trapped.png"));
 
         myTaunts.add("Jemi Jumex Belbiba");
         myTaunts.add("Chupapi Muñeño");
@@ -404,9 +405,7 @@ public class Player extends Actor{
         if(isBoss())
             myCurrentImage = miscImages.get(2);
 
-        //g.drawRect((int)getX(),(int)getY(),getW(),getH());
-        g.setFont(new Font("Sans Serif", Font.BOLD, 18));
-        g.drawString(playerName, (int)getX()+getW()/2-playerName.length()*5,(int)getY()-10);
+        drawName(g);
 
         if(taunting){
             g.setFont(new Font("Sans Serif", Font.BOLD, 20));
@@ -420,6 +419,9 @@ public class Player extends Actor{
         if(isStunned()){
             if(stunner == PlayerOld.LISON || stunner == PlayerOld.NEEL){
                 g.drawImage(miscImages.get(3), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
+            }
+            else if(stunner == RISHI){
+                g.drawImage(miscImages.get(8), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
             }
             else{
                 if(stunDrawTimer > 0.35)
@@ -451,6 +453,19 @@ public class Player extends Actor{
             //g.drawString(team+" mimic: "+myMimic.getTeam(),20,100);
         }
     }
+    public void drawName(Graphics g){
+        if(playerName.length() > 12) {
+            //Font size = (pixels per letter) / 0.6
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, (int) ((200.0 / playerName.length()) / .6)));
+            g.drawString(playerName, (int) getX() + getW() / 2 - 200/2, (int) getY() - 10);
+        }
+        else {
+            int width = (int)(25 * 0.6 * playerName.length());
+            g.setFont(new Font(Font.MONOSPACED,Font.BOLD,25));
+            g.drawString(playerName, (int) getX() + getW() / 2 - width/2, (int) getY() - 10);
+        }
+    }
+
     public void baseAnimate(){
         setXVel(damageXVel+inputXVel + airInputXVel);
 
@@ -573,8 +588,7 @@ public class Player extends Actor{
         if(myLightning!=null)
             myLightning.draw(g,io);
         //draw L attack
-        if(myLAttack!=null)
-            myLAttack.draw(g,io);
+        myLAttacks.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
         //draw moto
         if(myMoto!=null)
             myMoto.draw(g,io);
@@ -676,11 +690,17 @@ public class Player extends Actor{
                 myLightning = null;
         }
         //Animate LAttack
-        if(myLAttack != null){
-            myLAttack.animateMovement();
-            myLAttack.animateDamage(players);
-            if(myLAttack.outOfBounds())
-                myLAttack = null;
+        for(int i = myLAttacks.size()-1; i >= 0; i--){
+            GrowingLAttack myLAttack = myLAttacks.get(i);
+
+            if(myLAttack != null) {
+                myLAttack.animateMovement();
+                myLAttack.animateDamage(players);
+
+                if (myLAttack.outOfBounds())
+                    myLAttacks.remove(i);
+            } else
+                myLAttacks.remove(i);
         }
         //Animate Motorcycle
         if(myMoto != null){
@@ -756,7 +776,7 @@ public class Player extends Actor{
             else{
                 Point p = stickyLocs.get(i);
                 myExplosions.add(new Explosion(p.x+(int)getX(),p.y+(int)getY(),100,100,
-                        stickyTeam.get(i),.4,false,character));
+                        stickyTeam.get(i),.4,false,BRYCE));
                 stickyTimers.remove(i);
                 stickyLocs.remove(i);
                 stickyTeam.remove(i);
@@ -824,14 +844,17 @@ public class Player extends Actor{
         //If I am umer, kaushal, salome, emi, or lawrence; my J attack acts as a punch
         if(getCharacter() == UMER || character == KAUSHAL || character == SALOME
                 || character == EMI || character == LAWRENCE){
-            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),2, true,character,getW(),getH());
+            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),2, true,character,getW(),getH(), 30, 5);
             if(character == EMI){
                 myPunch.setSize(180,5);
                 myPunch.setPunchCD(myPunch.getPunchCD()*2);
-            } else if(character == LAWRENCE){
+            } else if(character == LAWRENCE || character == KAUSHAL){
                 myPunch.setSize(60,5);
                 myPunch.setPunchCD(myPunch.getPunchCD()*1.25);
             }
+            // punch sound effects
+            if(character == UMER || character == SALOME || character == EMI)
+                mySFX.add("punch");
         }
         //If I am Matei, my J attack acts as a projectile
         else if(character == MATEI){
@@ -878,6 +901,12 @@ public class Player extends Actor{
                 myProjectiles.add(myProj);
                 mySFX.add("stickyShot");
             }
+        }
+        //Rishi mini tennis boomerang
+        else if(character == RISHI){
+            myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),10,10,getDirection(),
+                    (int)getX()+getDirection()*800, false, getTeam(),
+                    false, 1, character));
         }
         //If I am not a character jack or adam, my J attack is a simple projectile
         else {
@@ -953,7 +982,7 @@ public class Player extends Actor{
         }
         //Lawrence Boomerang
         else if(character == LAWRENCE){
-            myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),getDirection(),
+            myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),60,30,getDirection(),
                     (int)getX()+getDirection()*800, false, getTeam(),
                     false, 1, character));
         }
@@ -975,9 +1004,14 @@ public class Player extends Actor{
                     150, team, .4, false, character));
             mySFX.add("stickyExplosion");
         }
+        //Rishi net
+        else if(character == RISHI){
+            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),8,
+                    true,character,getW(),getH(),180,25);
+        }
     }
     public void chargeLAttack(){
-        if(character == ADAM || character == UMER )
+        if(character == ADAM || character == UMER || character == RISHI)
             chargingLAttackStrength+=1.0/300;
         else if(character == JACK)
             chargingLAttackStrength+=1.0/60;
@@ -989,8 +1023,9 @@ public class Player extends Actor{
             chargingLAttackStrength+=1.0/450;
         if(chargingLAttackStrength > MAX_L || character == LISON
                 || character == OBAMA || character == LAWRENCE
-                || character == NEEL || character == BRYCE)
+                || character == NEEL || character == BRYCE) {
             chargingLAttackStrength = MAX_L;
+        }
 
         isHealing = false;
     }
@@ -1003,8 +1038,8 @@ public class Player extends Actor{
 
         if(character == ADAM || character == UMER){
             int size = (int)(10+lAttackStrength*700);
-            myLAttack = new GrowingLAttack((int)getX(),(int)getY()+getH()/2-size/2-17,
-                    direction,getTeam(),size,character);
+            myLAttacks.add(new GrowingLAttack((int)getX(),(int)getY()+getH()/2-size/2-17,
+                    size, size, direction,getTeam(),size,character));
             lAttackTimer = 0;
 
             if(character == ADAM)
@@ -1025,8 +1060,7 @@ public class Player extends Actor{
         }
         else if(character == SPOCK || character == EMI){
             myPunch = new Punch((int)getX(),(int)getY(),direction,getTeam(),
-                    lAttackStrength*60,true,character,getW(),getH());
-            myPunch.setSize(1100,200);
+                    lAttackStrength*60,true,character,getW(),getH(),1100,116);
             lAttackCooldown = 9;
         }
         else if(character == LISON){
@@ -1058,7 +1092,18 @@ public class Player extends Actor{
         }
         else if(character == BRYCE){
             myMimic = new Player((int)getX(),(int)getY(),getW(),getH(),playerID);
-            lAttackCooldown = 20.0;
+            lAttackCooldown = 35.0;
+        }
+        else if(character == RISHI){
+            int w = (int) (300 * (lAttackStrength * 3));
+            int h = (int) (180 * (lAttackStrength * 3));
+            myLAttacks.add(new GrowingLAttack((int)getX()+getW()-20,(int)getY()+getH()/2-h/2-17,
+                    w,h,1,getTeam(),h,character));
+            myLAttacks.add(new GrowingLAttack((int)getX()-w+20,(int)getY()+getH()/2-h/2-17,
+                    w,h,-1,getTeam(),h,character));
+
+            lAttackTimer *= 3;
+            mySFX.add("whistle");
         }
     }
 
@@ -1151,7 +1196,7 @@ public class Player extends Actor{
         packedPlayersInfo += Punch.pack(myPunch) + parseChar;
         packedPlayersInfo += VerticalPunch.pack(myVPunch) + parseChar;
         packedPlayersInfo += Lightning.pack(myLightning) + parseChar;
-        packedPlayersInfo += GrowingLAttack.pack(myLAttack) + parseChar;
+        packedPlayersInfo += GrowingLAttack.packArray(myLAttacks) + parseChar;
         packedPlayersInfo += Motorcycle.pack(myMoto) + parseChar;
         packedPlayersInfo += isHealing + parseChar;
         packedPlayersInfo += Stick.pack(myStick) + parseChar;
@@ -1196,7 +1241,7 @@ public class Player extends Actor{
         player.setMyPunch(Punch.unPack(playerData[3]));
         player.setMyVPunch(VerticalPunch.unPack(playerData[4]));
         player.setMyLightning(Lightning.unPack(playerData[5]));
-        player.setLAttack(GrowingLAttack.unPack(playerData[6]));
+        player.setLAttacks(GrowingLAttack.unPackArray(playerData[6]));
         player.setMyMoto(Motorcycle.unPack(playerData[7]));
         player.setHealing(Boolean.parseBoolean(playerData[8]));
         player.setMyStick(Stick.unPack(playerData[9]));
@@ -1232,6 +1277,8 @@ public class Player extends Actor{
                 case("fireball") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/fireballSFX.wav"));
                 case("electricity") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/electricity.wav"));
                 case("sun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
+                case("punch") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch"+(int)(Math.random()*3)+".wav"));
+                case("whistle") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/whistle.wav"));
             }
         }
         return sfx;

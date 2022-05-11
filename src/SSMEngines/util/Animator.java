@@ -6,7 +6,6 @@ import SSMCode.Player;
 import SSMCode.PlayerAttacks.Projectile;
 import SSMEngines.AnimationPanel;
 import SSMEngines.SSMClient;
-import SSMEngines.old.PlayerOld;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -275,6 +274,10 @@ public class Animator {
                 //fixes the bug where catching boomerang doesn't reset timer
                 if (p.getCharacter() == Player.LAWRENCE && playerTimers.get(i).get(1) == 0)
                     p.setBoomerangs(new ArrayList<>());
+                //you can't turn your body while punching
+                //if punch is giant laser, don't let me turn
+                if(p.getPunch() != null)
+                    p.setDirection(p.getPunch().getDirection());
 
                 handleWalkingAnimation(p, i);
                 handlePlayerImages(p, i);
@@ -594,7 +597,7 @@ public class Animator {
         }
 
         //Bryce's mitosis animation
-        if(me.isLAttacking()) {
+        if(me.isLAttacking() && me.getCharacter() == Player.BRYCE) {
             if (me.getX() + me.getW() / 2.0 < AnimationPanel.width / 2.0)
                 me.setMyImageIndex(Player.L_ATTACK_BACKWARD);
             else
@@ -682,8 +685,6 @@ public class Animator {
         boolean k = playerMoves.get(index).get(K);
         boolean l = playerMoves.get(index).get(L);
 
-        //if the game has started, you're in game, you're not using lightning, and you're not stunned, you can attack
-
         //J and K attacks
         if(startGameTimer == 0 && screenNumber == IN_GAME_SCREEN && me.getLightning() == null && !me.isStunned()) {
             //J attack, cooldown = 0, and no motorcycle, and not healing
@@ -694,12 +695,15 @@ public class Animator {
                 //j animation
                 attackAnimationTimers.get(index).set(0,0.25);
                 //spock and emi and obama have a longer cooldown
-                if (me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.EMI)
+                if (me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.EMI
+                        || me.getCharacter() == Player.BRYCE)
                     playerTimers.get(index).set(0,0.5);
-                if (me.getCharacter() == PlayerOld.OBAMA)
+                if (me.getCharacter() == Player.OBAMA)
                     playerTimers.get(index).set(0,1.0);
                 if(me.getCharacter() == Player.NEEL)
                     playerTimers.get(index).set(0,0.32);
+                if(me.getCharacter() == Player.RISHI)
+                    playerTimers.get(index).set(0,.75);
             }
             //K attack, cooldown = 0
             if (k && playerTimers.get(index).get(1) == 0) {
@@ -708,19 +712,19 @@ public class Animator {
                 playerTimers.get(index).set(1,1.25); //set k cooldown to 1.25 (default)
                 attackAnimationTimers.get(index).set(1,0.25); //k animation (default)
 
-                if (me.getCharacter() == PlayerOld.ADAM || me.getCharacter() == PlayerOld.EMI)
+                if (me.getCharacter() == Player.ADAM || me.getCharacter() == Player.EMI)
                     playerTimers.get(index).set(1,5.0); //Adam and emi have cooldown of 5
-                else if (me.getCharacter() == PlayerOld.SALOME)
+                else if (me.getCharacter() == Player.SALOME)
                     playerTimers.get(index).set(1,.25); //salome has cooldown of .25
-                else if (me.getCharacter() == PlayerOld.KAUSHAL)
+                else if (me.getCharacter() == Player.KAUSHAL)
                     playerTimers.get(index).set(1,.75); //Kaushal has cooldown on .75
-                else if (me.getCharacter() == PlayerOld.SPOCK || me.getCharacter() == PlayerOld.LAWRENCE) {
+                else if (me.getCharacter() == Player.SPOCK || me.getCharacter() == Player.LAWRENCE) {
                     playerTimers.get(index).set(1,8.0); //spock and lawrence have cooldown of 8
                     attackAnimationTimers.get(index).set(1,0.6); //k animation
                 }
-                else if (me.getCharacter() == PlayerOld.LISON)
+                else if (me.getCharacter() == Player.LISON)
                     playerTimers.get(index).set(1,3.0); //Lison has cooldown of 3
-                else if (me.getCharacter() == PlayerOld.OBAMA) {
+                else if (me.getCharacter() == Player.OBAMA) {
                     playerTimers.get(index).set(1,.3); //obama has cooldown of .3
                     attackAnimationTimers.get(index).set(1,0.4);
                 }
@@ -730,11 +734,15 @@ public class Animator {
                     playerTimers.get(index).set(1,7.5); //Bryce has a cooldown of 7.5
                     attackAnimationTimers.get(index).set(1,0.5);
                 }
+                else if (me.getCharacter() == Player.RISHI) {
+                    playerTimers.get(index).set(1,4.0); //spock and lawrence have cooldown of 8
+                    attackAnimationTimers.get(index).set(1,0.6); //k animation
+                }
             }
         }
         //L attacks
         if(l && !me.isLAttacking() && me.getLCooldown() <=0 && me.getLightning() == null
-                && !me.isHealing() && !me.isStunned())
+                && !me.isHealing() && !me.isStunned() && !me.isUntargetable())
             chargingL.set(index, true);
         else if(!l && me.getChargingLAttackStrength() > 0 && me.getLightning() == null
                 && !me.isHealing())

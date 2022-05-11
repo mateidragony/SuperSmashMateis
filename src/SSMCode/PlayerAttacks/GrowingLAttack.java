@@ -24,6 +24,7 @@ public class GrowingLAttack extends Actor{
     public static final int SUN = 0;
     public static final int HEAD_F = 1;
     public static final int HEAD_B = 2;
+    public static final int SMOKE = 3;
     
     private final int dir;
     private final String team;
@@ -33,8 +34,8 @@ public class GrowingLAttack extends Actor{
     
     private static ArrayList<Image> myImages;
     
-    public GrowingLAttack(int x,int y,int Direction, String team_, int size, int shooter){
-        super(x,y,size,size);
+    public GrowingLAttack(int x,int y,int w, int h,int Direction, String team_, int size, int shooter){
+        super(x,y,w,h);
         
         this.size = size;
         team = team_;
@@ -76,10 +77,19 @@ public class GrowingLAttack extends Actor{
         if(shooter == Player.ADAM)
             myImage = myImages.get(SUN);
         //else draw umer's head
-        else if(shooter == Player.UMER && dir == Projectile.RIGHT)
-            myImage = myImages.get(HEAD_F);
-        else 
-            myImage = myImages.get(HEAD_B);
+        else if(shooter == Player.UMER) {
+            if (dir == Projectile.RIGHT)
+                myImage = myImages.get(HEAD_F);
+            else
+                myImage = myImages.get(HEAD_B);
+        }
+        //else draw the smoke
+        else{
+            if (dir == Projectile.RIGHT)
+                myImage = myImages.get(SMOKE);
+            else
+                myImage = myImages.get(SMOKE+1);
+        }
         
         g.drawImage(myImage, (int)getX(),(int)getY(),getW(),getH(), io);
     }
@@ -92,6 +102,8 @@ public class GrowingLAttack extends Actor{
         myImages.add(toolkit.getImage("SSMImages/Adam/sun.png"));
         myImages.add(toolkit.getImage("SSMImages/Umer/Umer_Head_F.png"));
         myImages.add(toolkit.getImage("SSMImages/Umer/Umer_Head.png"));
+        myImages.add(toolkit.getImage("SSMImages/Rishi/explosion.png"));
+        myImages.add(toolkit.getImage("SSMImages/Rishi/explosion_B.png"));
     }
 
 
@@ -105,6 +117,8 @@ public class GrowingLAttack extends Actor{
         String str = "";
         str += (int)p.getX() + SSMClient.parseChar;
         str += (int)p.getY() + SSMClient.parseChar;
+        str += p.getW() + SSMClient.parseChar;
+        str += p.getH() + SSMClient.parseChar;
         str += p.dir + SSMClient.parseChar;
         str += p.team + SSMClient.parseChar;
         str += p.getSize() + SSMClient.parseChar;
@@ -116,7 +130,26 @@ public class GrowingLAttack extends Actor{
             return null;
         String[] data = s.split(SSMClient.parseChar);
         return new GrowingLAttack(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]),
-                data[3], Integer.parseInt(data[4]), Integer.parseInt(data[5]));
+                Integer.parseInt(data[3]), Integer.parseInt(data[4]),data[5],
+                Integer.parseInt(data[6]), Integer.parseInt(data[7]));
     }
-    
+    public static String packArray(ArrayList<GrowingLAttack> pList){
+        String packedPList = "";
+        if(pList.isEmpty())
+            return "null";
+        for(int i=pList.size()-1;i>=0;i--){
+            GrowingLAttack p = pList.get(i);
+            packedPList = packedPList.concat(pack(p)+Projectile.arrayParseChar);
+        }
+        return packedPList;
+    }
+    public static ArrayList<GrowingLAttack> unPackArray(String packedPList){
+        ArrayList<GrowingLAttack> pList = new ArrayList<>();
+        if(packedPList.equals("null"))
+            return pList;
+        for(String s: packedPList.split(Projectile.arrayParseChar)){
+            pList.add(unPack(s));
+        }
+        return pList;
+    }
 }

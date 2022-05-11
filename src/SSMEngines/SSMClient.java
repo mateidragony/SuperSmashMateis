@@ -274,6 +274,9 @@ public class SSMClient extends AnimationPanel{
         if(cheatCode.length() > 999)
             cheatCode = " ";
         keyTyped = ""+c;
+
+        if(c == 'i')
+            playerName += "i";
     }
     public void keyPressed(KeyEvent e) {
         int v = e.getKeyCode();

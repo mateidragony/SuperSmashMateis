@@ -197,6 +197,8 @@ public class Drawer {
         drawBottomInGameScreen(g,io);
         //draws the cooldowns for each of your abilities
         drawAbilityBar(g);
+        //draw the L attack charge up bar
+        drawLChargeUp(g, players.get(playerID));
         //draw the 3,2,1,go
         drawStartingGame(g,io);
         //draw the game timer
@@ -367,6 +369,24 @@ public class Drawer {
             g.setColor(Color.red); g.setFont(new Font("Sans Serif", Font.BOLD, 22));
             g.drawString(String.valueOf(df.format(players.get(playerID).getLCooldown())),x+12,y+155);
         }
+    }
+    public void drawLChargeUp(Graphics g, Player me){
+        g.setColor(Color.white);
+        g.fillRect(width-75 - 5, 200 - 5 , 25 + 10, 150 + 10);
+        g.setColor(Color.black);
+        g.fillRect(width-75, 200, 25, 150);
+
+        boolean instaL = me.getCharacter() == Player.LISON
+                || me.getCharacter() == Player.OBAMA || me.getCharacter() == Player.LAWRENCE
+                || me.getCharacter() == Player.NEEL || me.getCharacter() == Player.BRYCE;
+        double percentCharged = me.getChargingLAttackStrength()/Player.MAX_L;
+        if(!instaL) {
+            //cool gradient charge up
+            int h = (int) (150 * percentCharged);
+            g.setColor(Color.getHSBColor((h/150f),1,1));
+            g.fillRect(width - 75, 350 - h, 25, h);
+        }
+
     }
     public void handleSFX(){
         for(int i=0; i<players.size(); i++){

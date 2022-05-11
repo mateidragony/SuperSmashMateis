@@ -61,7 +61,12 @@ public class Explosion extends GameObject {
         //g.fillRect((int)getX(),(int)getY(),getW(),getH());
         int w = (int) (getW() * (.7-timer));
         int h = (int) (getH() * (.7-timer));
-        g.drawImage(myImages.get(0), (int) getX() + getW()/2 - w/2, (int) getY() + getH()/2 - h/2, w, h, io);
+
+        Image myImage = null;
+        if(shooter == Player.BRYCE)
+            myImage = myImages.get(0);
+
+        g.drawImage(myImage, (int) getX() + getW()/2 - w/2, (int) getY() + getH()/2 - h/2, w, h, io);
 
     }
 

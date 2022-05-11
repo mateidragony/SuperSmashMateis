@@ -19,9 +19,7 @@ import java.util.ArrayList;
 public class VerticalPunch extends Punch{
     
     public VerticalPunch(int x, int y, int dir, String team_, double cd, boolean hurts, int shooter, int sW, int sH){
-        super(x,y,dir,team_,cd,hurts,shooter,sW,sH);
-        
-        setSize(15,50);
+        super(x,y,dir,team_,cd,hurts,shooter,sW,sH,15,50);
     }
     
     public Rectangle getHitBox(){

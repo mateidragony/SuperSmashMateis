@@ -29,12 +29,12 @@ public class Boomerang extends Actor{
     private final int maxX, minX, finalX;
     private final int shooter;
 
-    private static Image sword1, sword2;
+    private static Image sword1, sword2, ball;
     private double drawTimer;
     
-    public Boomerang(int x,int y, int direction, int finalX_, boolean returning_,
+    public Boomerang(int x,int y,int w, int h, int direction, int finalX_, boolean returning_,
             String team_, boolean isNull_, double draw, int shooter){
-        super(x,y,60,30);
+        super(x,y,w,h);
         
         returning = returning_;
         team = team_;
@@ -105,6 +105,8 @@ public class Boomerang extends Actor{
             else
                 currentImage = sword2;
         }
+        else if(shooter == Player.RISHI)
+            currentImage = ball;
         
         g.drawImage(currentImage, (int)getX(),(int)getY(),getW(),getH(), io);
     }
@@ -112,6 +114,7 @@ public class Boomerang extends Actor{
     public static void initImages(Poolkit toolkit){
         sword1 = toolkit.getImage("SSMImages/Lawrence/Sword_Boomerang_1.png");
         sword2 = toolkit.getImage("SSMImages/Lawrence/Sword_Boomerang_2.png");
+        ball = toolkit.getImage("SSMImages/Rishi/tennisBall.png");
     }
 
 
@@ -126,6 +129,8 @@ public class Boomerang extends Actor{
             String packedProj = "";
             packedProj += r.getX() + SSMClient.parseChar;
             packedProj += r.getY() + SSMClient.parseChar;
+            packedProj += r.getW() + SSMClient.parseChar;
+            packedProj += r.getH() + SSMClient.parseChar;
             packedProj += r.dir + SSMClient.parseChar;
             packedProj += r.finalX + SSMClient.parseChar;
             packedProj += r.returning + SSMClient.parseChar;
@@ -142,8 +147,9 @@ public class Boomerang extends Actor{
         String[] myInfo = s.split(SSMClient.parseChar);
 
         return new Boomerang((int)Double.parseDouble(myInfo[0]),(int)Double.parseDouble(myInfo[1]),
-                Integer.parseInt(myInfo[2]),Integer.parseInt(myInfo[3]),Boolean.parseBoolean(myInfo[4]),myInfo[5],
-                Boolean.parseBoolean(myInfo[6]),Double.parseDouble(myInfo[7]),Integer.parseInt(myInfo[8]));
+                Integer.parseInt(myInfo[2]),Integer.parseInt(myInfo[3]), Integer.parseInt(myInfo[4]),
+                Integer.parseInt(myInfo[5]), Boolean.parseBoolean(myInfo[6]),myInfo[7],
+                Boolean.parseBoolean(myInfo[8]),Double.parseDouble(myInfo[9]),Integer.parseInt(myInfo[10]));
     }
     public static String packArray(ArrayList<Boomerang> pList){
         String packedPList = "";
