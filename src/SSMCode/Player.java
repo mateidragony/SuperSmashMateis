@@ -907,6 +907,7 @@ public class Player extends Actor{
             myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),10,10,getDirection(),
                     (int)getX()+getDirection()*800, false, getTeam(),
                     false, 1, character));
+            mySFX.add("tennis");
         }
         //If I am not a character jack or adam, my J attack is a simple projectile
         else {
@@ -1008,6 +1009,7 @@ public class Player extends Actor{
         else if(character == RISHI){
             myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),8,
                     true,character,getW(),getH(),180,25);
+            mySFX.add("net");
         }
     }
     public void chargeLAttack(){
@@ -1279,6 +1281,8 @@ public class Player extends Actor{
                 case("sun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
                 case("punch") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch"+(int)(Math.random()*3)+".wav"));
                 case("whistle") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/whistle.wav"));
+                case("tennis") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/tennisball.wav"));
+                case("net") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/net.wav"));
             }
         }
         return sfx;
