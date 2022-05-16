@@ -1,19 +1,27 @@
 package SSMCode;
-/**
- *
- * @author 22cloteauxm
- */
 
 import SSMCode.PlayerAttacks.*;
+import SSMEngines.AnimationPanel;
+import SSMEngines.SSMClient;
+import SSMEngines.old.PlayerOld;
+import SSMEngines.util.AudioUtility;
+import SSMEngines.util.Poolkit;
+
+import javax.imageio.ImageIO;
+import javax.sound.sampled.Clip;
 import java.awt.*;
 import java.awt.image.ImageObserver;
-import java.util.ArrayList;
+import java.io.File;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Player extends Actor{
-    
-    //--------------------------------------------
-    //Character Image Indices
-    //--------------------------------------------
+
+    /**
+     * Character Image Indices
+     */
     public static final int MATEI = 0;
     public static final int UMER = 1;
     public static final int ADAM = 2;
@@ -26,10 +34,12 @@ public class Player extends Actor{
     public static final int EMI = 9;
     public static final int LAWRENCE = 10;
     public static final int NEEL = 11;
-    public static final int DUMMY = 12;
-    
+    public static final int BRYCE = 12;
+    public static final int RISHI = 13;
+    public static final int DUMMY = 14;
+
     //Lol forward is right backward is left
-    //No idea why i put forward and backward
+    //No idea why I put forward and backward
     public static final int STANDING_FORWARD = 0;
     public static final int STANDING_BACKWARD = 1;
     public static final int RUNNING_FORWARD1 = 2;
@@ -44,113 +54,143 @@ public class Player extends Actor{
     public static final int CHARGE_L_ATTACK_BACKWARD = 11;
     public static final int L_ATTACK_FORWARD = 12;
     public static final int L_ATTACK_BACKWARD = 13;
-    
-    
-    //--------------------------------------------
-    //Variables
-    //--------------------------------------------
+
+
+    /**
+     * Variables
+     */
     private static ArrayList<Image> myImages;
     private static ArrayList<ArrayList<Image>> myInGameImageLists;
     private static ArrayList<Image> miscImages;
     private static ArrayList<String> myNames;
     private static ArrayList<String> myTaunts;
-    
-    private static double testPrintTimer = 1;
-    
-    private ArrayList<Projectile> pList;
-    private String team;
+
+    private ArrayList<String> mySFX = new ArrayList<>();
+
+    private static final double testPrintTimer = 1;
+
+    private int numStickyProjectiles;
+    private List<Double> stickyTimers;
+    private List<String> stickyTeam;
+    private List<Point> stickyLocs;
+
+    private final int playerID;
+    private final String team;
+    private final Color color;
     private String playerName;
     private int direction;
     private int character;
     private int lives;
+    private int stunner;
     private double stunDuration, stunDrawTimer, confusionDuration, flameDuration, flameDrawTimer;
-    
+
+    private double inputXVel, damageXVel, airInputXVel;
+
     private boolean taunting;
     private boolean isBoss;
-    
-    private Punch myPunch;
-    private Punch enemyPunch;
-    
-    private Rocket myRocket;
-    private Rocket enemyRocket;
-    
-    private VerticalPunch myVPunch;
-    private VerticalPunch enemyVPunch;
-    
-    private Lightning myLightning;
-    private Lightning enemyLightning;
-    
-    private GrowingLAttack myLAttack;
-    private GrowingLAttack enemyLAttack;
-    
-    private Motorcycle myMoto;
-    private Motorcycle enemyMoto;
-    
-    private Stick myStick;
-    private Stick enemyStick;
-    
-    private boolean isHealing;
-    private boolean enemyIsHealing;
-    
-    private RainingCode myRain;
-    private RainingCode enemyRain;
-    
-    private Boomerang myBoomerang;
-    private Boomerang enemyBoomerang;
-    
-    private boolean enemyIsDashing;
-    
+
     public static final double MAX_L = 0.3;
     private double lAttackStrength, lAttackTimer, chargingLAttackStrength, lAttackCooldown, bossAttackTimer, nadoTimer;
-    
+
     private int myImageIndex;
-    private int myImageIndexFrame;
-    
-    public Player(double x, double y, int w, int h, String team_) {
+
+
+    /**
+     * Constructors
+     */
+    public Player(double x, double y, int w, int h, int playerID) {
         super(x,y,w,h);
-        
-        team = team_;
-        character = 0;
+
+        this.playerID = playerID;
+        character = DUMMY;
         myImageIndex = 1;
-        pList = new ArrayList<>();
-        
+        direction = 1;
+
+        initializeAttacks();
+
         lives = 3;
-        
-        playerName = "Dummy";
-	
+
+        playerName = "I have no name :(";
+
+        switch(playerID){
+            case(0) -> {team = "red"; color = Color.red;}
+            case(1) -> {team = "blue"; color = Color.blue;}
+            case(2) -> {team = "green"; color = Color.green;}
+            default -> {team = "yellow"; color = Color.yellow;}
+        }
+    }
+    public Player(int playerID) {
+        super(0,0,60,90);
+
+        this.playerID = playerID;
+        character = DUMMY;
+        myImageIndex = 1;
+        direction = 1;
+
+        initializeAttacks();
+
+        lives = 3;
+
+        playerName = "I have no name :(";
+
+        switch(playerID){
+            case(0) -> {team = "red"; color = Color.red;}
+            case(1) -> {team = "blue"; color = Color.blue;}
+            case(2) -> {team = "green"; color = Color.green;}
+            default -> {team = "yellow"; color = Color.yellow;}
+        }
     }
 
-    //--------------------------------------------
-    //Dealing with attacks
-    //--------------------------------------------
-    public ArrayList<Projectile> getPList(){return pList;}
+    /**
+     *  Player Attack Lists (The player sends their attacks to the server and receives the other players' attack)
+     */
+    private ArrayList<Projectile> myProjectiles;
+    private ArrayList<Rocket> myRockets;
+    private Punch myPunch;
+    private VerticalPunch myVPunch;
+    private Lightning myLightning;
+    private ArrayList<GrowingLAttack> myLAttacks;
+    private Motorcycle myMoto;
+    private boolean isHealing;
+    private Stick myStick;
+    private RainingCode myRain;
+    private ArrayList<Boomerang> myBoomerangs;
+    private ArrayList<Explosion> myExplosions;
+    private Player myMimic;
+
+    /**
+     * Attack Accessors and Modifiers
+     */
+    public ArrayList<Projectile> getPList(){return myProjectiles;}
     public Punch getPunch(){return myPunch;}
-    public Rocket getRocket(){return myRocket;}
+    public ArrayList<Rocket> getRocketList(){return myRockets;}
     public VerticalPunch getVPunch(){return myVPunch;}
     public Lightning getLightning(){return myLightning;}
-    public GrowingLAttack getLAttack(){return myLAttack;}
+    public ArrayList<GrowingLAttack> getLAttacks(){return myLAttacks;}
     public Motorcycle getMoto(){return myMoto;}
     public boolean isHealing(){return isHealing;}
     public Stick getStick(){return myStick;}
     public RainingCode getRain(){return myRain;}
-    public Boomerang getBoomerang(){return myBoomerang;}
-    
-    public void setEnemyPunch(Punch c){enemyPunch = c;}
-    public void setEnemyRocket(Rocket c){enemyRocket = c;}
-    public void setEnemyVPunch(VerticalPunch c){enemyVPunch = c;}
-    public void setEnemyLightning(Lightning c){enemyLightning = c;}
-    public void setEnemyLAttack(GrowingLAttack c){enemyLAttack = c;}
-    public void setEnemyMoto(Motorcycle c){enemyMoto = c;}
-    public void setMyMoto(Motorcycle c){myMoto = c;}
-    public void setEnemyHealing(boolean c){enemyIsHealing = c;}
-    public void setEnemyStick(Stick c){enemyStick = c;}
-    public void setEnemyDashing(boolean c){enemyIsDashing = c;}
-    public void setEnemyRain(RainingCode c){enemyRain = c;}
-    public void setEnemyBoomerang(Boomerang c){enemyBoomerang = c;}
-    
-    //--------------------------------------------
-    //Accessors
-    //--------------------------------------------
+    public ArrayList<Boomerang> getBoomerangList(){return myBoomerangs;}
+    public ArrayList<Explosion> getExplosions(){return myExplosions;}
+    public Player getMimic(){return myMimic;}
+
+    public void setPList(ArrayList<Projectile> pList){myProjectiles = pList;}
+    public void setMyPunch(Punch p){myPunch = p;}
+    public void setRocketList(ArrayList<Rocket> rList){myRockets = rList;}
+    public void setMyVPunch(VerticalPunch p){myVPunch = p;}
+    public void setMyLightning(Lightning p){myLightning = p;}
+    public void setMyMoto(Motorcycle p){myMoto = p;}
+    public void setLAttacks(ArrayList<GrowingLAttack> g){myLAttacks = g;}
+    public void setMyStick(Stick p){myStick = p;}
+    public void setMyRain(RainingCode p){myRain = p;}
+    public void setBoomerangs(ArrayList<Boomerang> bList){myBoomerangs = bList;}
+    public void setExplosions(ArrayList<Explosion> eList){myExplosions = eList;}
+    public void setMimic(Player r){myMimic = r;}
+
+    /**
+     * Accessors
+     */
     public String getTeam(){return team;}
     public int getDirection(){return direction;}
     public int getCharacter(){return character;}
@@ -163,7 +203,13 @@ public class Player extends Actor{
     public double getFlameDuration(){return flameDuration;}
     public double getConfusionDuration(){return confusionDuration;}
     public double getLAttackTimer(){return lAttackTimer;}
-    
+    public double getNadoTimer(){return nadoTimer;}
+    public Color getColor(){return color;}
+    public double getInputXVel(){return inputXVel;}
+    public double getDamageXVel(){return damageXVel;}
+    public ArrayList<String> getMySFX(){return mySFX;}
+    public int getNumStickies(){return numStickyProjectiles;}
+
     public boolean isBoss(){return isBoss;}
     public boolean isTaunting(){return taunting;}
     public boolean chargingL(){return chargingLAttackStrength >0;}
@@ -172,14 +218,15 @@ public class Player extends Actor{
     public boolean isFlaming(){return flameDuration>0;}
     public boolean isConfused(){return confusionDuration>0;}
     public boolean isDashing(){return lAttackTimer > 0 && character == SALOME;}
-    public boolean getEnemyDashing(){return enemyIsDashing;}
-    
+
     public static ArrayList<Image> getImages(){return myImages;}
     public static ArrayList<String> getCharacterNames(){return myNames;}
 
-    //--------------------------------------------
-    //Modifiers
-    //--------------------------------------------
+    public int getMyImageIndex(){return myImageIndex;}
+
+    /**
+     * Modifiers
+     */
     public void setDirection(int c){direction = c;}
     public void setCharacter(int c){character = c;}
     public void setPlayerName(String c){playerName = c;}
@@ -191,244 +238,54 @@ public class Player extends Actor{
     public void setTaunting(boolean c){taunting = c;}
     public void setIsBoss(boolean c){isBoss = c;}
     public void setLAttackTimer(double c){lAttackTimer = c;}
-    
-    public void draw(Graphics g, ImageObserver io, int playerID, Player enemy){
-        
-        int[] triangle1XPoints = new int[3];
-        int[] triangle2XPoints = new int[3];
-        int[] triangleYPoints = new int[3];
-        
-        triangle1XPoints[0] = 20;triangle1XPoints[1] = 50;triangle1XPoints[2] = 50;
-        triangle2XPoints[0] = 1070;triangle2XPoints[1] = 1040;triangle2XPoints[2] = 1040;
-        triangleYPoints[0] = (int)getY();triangleYPoints[1] = (int)getY()-10;triangleYPoints[2] = (int)getY()+10;
-        
-        if(team.equals("blue"))
-            g.setColor(Color.blue);
-        else
-            g.setColor(Color.red);
-        
-        Image myCurrentImage;
-        
-        if(character==LISON && lAttackTimer>0){
-            if(nadoTimer>0.1)
-                myImageIndex = L_ATTACK_FORWARD;
-            else
-                myImageIndex = L_ATTACK_BACKWARD;
-        }
-        
-        if(character<myInGameImageLists.size() && !myInGameImageLists.get(character).isEmpty())
-            myCurrentImage = myInGameImageLists.get(character).get(myImageIndex);
-        else
-            myCurrentImage = myImages.get(character);
-        
-        if(isBoss())
-            myCurrentImage = miscImages.get(2);
-        
-        //g.drawRect((int)getX(),(int)getY(),getW(),getH());
-        g.setFont(new Font("Sans Serif", Font.BOLD, 18));
-        g.drawString(playerName, (int)getX()+(int)getW()/2-playerName.length()*5,(int)getY()-10);
-        
-        if(taunting){
-            g.setFont(new Font("Sans Serif", Font.BOLD, 20));
-            g.setColor(Color.white);
-            g.drawString(myTaunts.get(character), (int)getX()+(int)getW()/2-60,(int)getY()-30);
-            g.drawImage(myCurrentImage,(int)getX(),(int)getY()+getH()/2,getW(),getH()/2, io);
-        } else {
-            g.drawImage(myCurrentImage,(int)getX(),(int)getY(),getW(),getH(), io);
-        }
-        
-        if(getX()<0)
-            g.fillPolygon(triangle1XPoints,triangleYPoints,3);
-        if(getX()>1050)
-            g.fillPolygon(triangle2XPoints,triangleYPoints,3);
-        
-        if(isStunned()){
-            if(stunDrawTimer > 0)
-                stunDrawTimer -= 1.0/60;
-            else
-                stunDrawTimer = .7;
-            
-            if(enemy.getCharacter() == Player.LISON || enemy.getCharacter() == Player.NEEL){
-                g.drawImage(miscImages.get(3), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
-            }
-            else{
-                if(stunDrawTimer > 0.35)
-                    g.drawImage(miscImages.get(0), (int)getX(),(int)getY()-37,getW(),37,io);
-                else
-                    g.drawImage(miscImages.get(1), (int)getX(),(int)getY()-37,getW(),37,io);
-            }
-        }
-        if(isFlaming()){
-            if(flameDrawTimer > 0)
-                flameDrawTimer -= 1.0/60;
-            else
-                flameDrawTimer = .7;
-            
-            if(flameDrawTimer > 0.35)
-                g.drawImage(miscImages.get(6),(int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
-            else
-                g.drawImage(miscImages.get(7),(int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
-        }
-        
-        if(isConfused())
-            g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
-    }
-    
-    public void animate(){
-        super.animate();
-        if(isBoss){
-            animateBoss();
-        }
-        
-        if(stunDuration > 0)
-            stunDuration -= 1.0/60;
-        else
-            stunDuration = 0;
-        
-        if(flameDuration > 0)
-            flameDuration -= 1.0/60;
-        else
-            flameDuration = 0;
-        
-        if(confusionDuration > 0)
-            confusionDuration -= 1.0/60;
-        else
-            confusionDuration = 0;
-        
-        if(nadoTimer > 0)
-            nadoTimer-=1.0/60;
-        else
-            nadoTimer = 0.2;
-        
-        if(getPercentage()<0)
-            setPercentage(0);
-        
-        if(isStunned())
-            myMoto = null;
-        
-        if(isDashing())
-            setXVel(getXVel()*.75);
-        
-        if(isFlaming()){
-            setPercentage(getPercentage() + .075);
-            
-            if((int)(Math.random()*2) == 1)
-                setX(getX()+2);
-            else
-                setX(getX()-2);
-        }
-    }
-    
-    public void animateBoss(){
-        if(!isOnGround())
-                setYVel(getYVel()-Actor.GRAVITY);
-        setYVel(getYVel()*.75);
-        setXVel(getXVel()*.75);
-        
-        bossAttackTimer -= 1.0/60;
-        
-        if(bossAttackTimer < 0){
-            HomingShot myProj = new HomingShot((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                    getDirection(),getTeam(), false);
-            pList.add(myProj);
-            if(myRain != null){
-                if(myRain.getY()>700)
-                    doKAttack();
-            }
-            bossAttackTimer = .1;
-        }
-    }
-    
-    public void nullifyAll(ArrayList<Projectile> enemyPList){
-        pList.clear();
-        enemyPList.clear();
-        
-        myPunch = null;
-        enemyPunch= null;
-
-        myRocket= null;
-        enemyRocket= null;
-
-        myVPunch= null;
-        enemyVPunch= null;
-
-        myLightning= null;
-        enemyLightning= null;
-
-        myLAttack= null;
-        enemyLAttack= null;
-        
-        myMoto = null;
-        enemyMoto = null;
-        
-        isHealing = false;
-        enemyIsHealing = false;
-        
-        myStick = null;
-        enemyStick = null;
-        
-        myRain = null;
-        enemyRain = null;
-        
-        myBoomerang = null;
-        enemyBoomerang = null;
-    }
-    
-    //--------------------------------------------
-    //Dealing with Images
-    //--------------------------------------------
-    public int getMyImageIndex(){return myImageIndex;}
-    public int getMyImageIndexFrame(){return myImageIndexFrame;}
-    
     public void setMyImageIndex(int c){myImageIndex = c;}
-    public void setMyImageIndexFrame(int c){myImageIndexFrame = c;}
-    
+    public void setChargingLAttackStrength(double c){chargingLAttackStrength = c;}
+    public void setNadoTimer(double c){nadoTimer = c;}
+    public void setStunner(int c){stunner = c;}
+    public void setHealing(boolean c){isHealing = c;}
+    public void setFlameDrawTimer(double c){flameDrawTimer = c;}
+    public void setStunDrawTimer(double c){stunDrawTimer = c;}
+    public void setInputXVel(double c){inputXVel = c;}
+    public void setDamageXVel(double c){damageXVel = c;}
+    public void setAirInputXVel(double c){airInputXVel = c;}
+    public void setMySFX(ArrayList<String> c){mySFX = c;}
+    public void setNumStickies(int c){numStickyProjectiles = c;}
+    public void addStickyTimer(double c){stickyTimers.add(c);}
+    public void setStickyLocs(List<Point> c){stickyLocs = c;}
+    public void addStickyLoc(Point c){stickyLocs.add(c);}
+    public void addStickyTeam(String c){stickyTeam.add(c);}
+
+    /**
+     * Initializing Methods
+     */
+    public void initializeAttacks(){
+        myProjectiles = new ArrayList<>();
+        myRockets = new ArrayList<>();
+        myPunch = null;
+        myVPunch = null;
+        myLightning = null;
+        myLAttacks = new ArrayList<>();
+        myMoto = null;
+        isHealing = false;
+        myStick = null;
+        myRain = null;
+        myBoomerangs = new ArrayList<>();
+        myExplosions = new ArrayList<>();
+        myMimic = null;
+
+        stickyTimers = new ArrayList<>();
+        stickyLocs = new ArrayList<>();
+        stickyTeam = new ArrayList<>();
+        numStickyProjectiles = 0;
+    }
     public static void initImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        Poolkit toolkit = new Poolkit();
         myImages = new ArrayList<>();
         myInGameImageLists = new ArrayList<>();
         miscImages = new ArrayList<>();
         myNames = new ArrayList<>();
         myTaunts = new ArrayList<>();
-        
-        Punch.initImages();
-        
-        myImages.add(toolkit.getImage("SSMImages/Matei/Matei.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Umer/IMG_1290.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Adam/Adam.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Jack/jack.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Kaushal/kaushal.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Salome/Salome.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Spock/Spock.png"));
-        myImages.add(toolkit.getImage("SSMImages/Lison/Lison.png"));
-        myImages.add(toolkit.getImage("SSMImages/Obama/obama.png"));
-        myImages.add(toolkit.getImage("SSMImages/Emi/Emi.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Lawrence/lawrence.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Neel/Neel.jpg"));
-        myImages.add(toolkit.getImage("SSMImages/Dummy.png"));
-        
-        myInGameImageLists.add(initMateiImages());
-        myInGameImageLists.add(initUmerImages());
-        myInGameImageLists.add(initAdamImages());
-        myInGameImageLists.add(initJackImages());
-        myInGameImageLists.add(initKaushalImages());
-        myInGameImageLists.add(initSalomeImages());
-        myInGameImageLists.add(initSpockImages());
-        myInGameImageLists.add(initLisonImages()); 
-        myInGameImageLists.add(initObamaImages());
-        myInGameImageLists.add(initEmiImages());
-        myInGameImageLists.add(initLawrenceImages());
-        myInGameImageLists.add(initNeelImages());
-        
-        miscImages.add(toolkit.getImage("SSMImages/stun_1.png"));
-        miscImages.add(toolkit.getImage("SSMImages/stun_2.png"));
-        miscImages.add(toolkit.getImage("SSMImages/BossMode.png"));
-        miscImages.add(toolkit.getImage("SSMImages/stun_3.png"));
-        miscImages.add(toolkit.getImage("SSMImages/Lison/L_1.png"));
-        miscImages.add(toolkit.getImage("SSMImages/confusion.png"));
-        miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming1.png"));
-        miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming2.png"));
-        
+
         myNames.add("Matei");
         myNames.add("Umer");
         myNames.add("Adam");
@@ -441,7 +298,43 @@ public class Player extends Actor{
         myNames.add("Emi");
         myNames.add("Lawrence");
         myNames.add("Neel");
-        
+        myNames.add("Bryce");
+        myNames.add("Rishi");
+        myNames.add("Dummy");
+
+        Punch.initImages();
+
+        myImages.add(toolkit.getImage("SSMImages/Matei/Matei.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Umer/IMG_1290.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Adam/Adam.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Jack/jack.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Kaushal/kaushal.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Bob/Salome.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Spock/Spock.png"));
+        myImages.add(toolkit.getImage("SSMImages/Lison/Lison.png"));
+        myImages.add(toolkit.getImage("SSMImages/Obama/obama.png"));
+        myImages.add(toolkit.getImage("SSMImages/Emi/Emi.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Lawrence/lawrence.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Neel/Neel.jpg"));
+        myImages.add(toolkit.getImage("SSMImages/Bryce/Bryce.png"));
+        myImages.add(toolkit.getImage("SSMImages/Rishi/rishi.png"));
+        myImages.add(toolkit.getImage("SSMImages/Dummy.png"));
+
+        for(String name: myNames){
+            if(!name.equals("Dummy"))
+                myInGameImageLists.add(initPlayerImages(toolkit,name));
+        }
+
+        miscImages.add(toolkit.getImage("SSMImages/stun_1.png"));
+        miscImages.add(toolkit.getImage("SSMImages/stun_2.png"));
+        miscImages.add(toolkit.getImage("SSMImages/BossMode.png"));
+        miscImages.add(toolkit.getImage("SSMImages/stun_3.png"));
+        miscImages.add(toolkit.getImage("SSMImages/Lison/L_C_F.png"));
+        miscImages.add(toolkit.getImage("SSMImages/confusion.png"));
+        miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming1.png"));
+        miscImages.add(toolkit.getImage("SSMImages/Neel/Flaming2.png"));
+        miscImages.add(toolkit.getImage("SSMImages/Rishi/trapped.png"));
+
         myTaunts.add("Jemi Jumex Belbiba");
         myTaunts.add("Chupapi Muñeño");
         myTaunts.add("Wow Thats Fun");
@@ -449,497 +342,678 @@ public class Player extends Actor{
         myTaunts.add("*Gandhi Screech*");
         myTaunts.add("What a loser!");
         myTaunts.add("Construct Yourself!");
-        myTaunts.add("Oh My Ktty Kitty");
+        myTaunts.add("Silo");
         myTaunts.add("My Fellow Americans");
         myTaunts.add("Hey! That's Mine!");
         myTaunts.add("*Evil Laugh*");
         myTaunts.add("Neel!");
+        myTaunts.add("Cellular Soil!");
+        myTaunts.add("Ur mom");
         myTaunts.add("Im a dummy the f*** you expect me to say?");
     }
-    
-    public static ArrayList<Image> initMateiImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> MateiImages = new ArrayList<>();
+    private static ArrayList<Image> initPlayerImages(Poolkit toolkit, String playerName){
+        ArrayList<Image> images = new ArrayList<>();
 
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_S_F.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_S_B.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_R_F_1.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_R_B_1.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_R_F_2.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_R_B_2.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_J_F.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_J_B.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_K_F.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_K_B.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_L_C_F.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_L_C_B.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_L_F.png"));
-        MateiImages.add(toolkit.getImage("SSMImages/Matei/Matei_L_B.png"));
-        
-        return MateiImages;
-    }
-    public static ArrayList<Image> initUmerImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> UmerImages = new ArrayList<>();
-        
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_S_F.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_S_B.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_F_R.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_B_R.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_F_R_2.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_B_R_2.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_P_F.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_P_B.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_P_F_U.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_P_B_U.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_L_C_F.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_L_C_B.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_L_F.png"));
-        UmerImages.add(toolkit.getImage("SSMImages/Umer/Umer_L_B.png"));
-        
-        return UmerImages;
-    }
-    public static ArrayList<Image> initAdamImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> adamList = new ArrayList<>();
-        
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_S_F.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_S_B.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_W_F_1.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_W_B_1.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_W_F_2.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_W_B_2.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_J_F.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_J_B.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_K_F.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_K_B.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_L_C_F.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_L_C_B.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_L_F.png"));
-        adamList.add(toolkit.getImage("SSMImages/Adam/Adam_L_B.png"));
-        
-        return adamList;
-    }
-    public static ArrayList<Image> initJackImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> jackImages = new ArrayList<>();
-        
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_S_F.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_S_B.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_R_F_1.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_R_B_1.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_R_F_2.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_R_B_2.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_J_F.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_J_B.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_K_F.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_K_B.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_L_C_F.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_L_C_B.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_L_F.png"));
-        jackImages.add(toolkit.getImage("SSMImages/Jack/Jack_L_B.png"));
-        
-        return jackImages;
-    }
-    public static ArrayList<Image> initKaushalImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> kaushalImages = new ArrayList<>();
-        
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/S_F.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/S_B.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/R_F.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/R_B.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/R_F_2.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/R_B_2.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/J_F.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/J_B.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/K.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/K.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/L_C_F.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/L_C_B.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/L_F.png"));
-        kaushalImages.add(toolkit.getImage("SSMImages/Kaushal/L_B.png"));
-        
-        return kaushalImages;
-    }
-    public static ArrayList<Image> initSalomeImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> bobImages = new ArrayList<>();
-        
-        bobImages.add(toolkit.getImage("SSMImages/Salome/Standing_F.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/Standing_B.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/R_F_1.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/R_B_1.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/R_F_2.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/R_B_2.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/J_F.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/J_B.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/K_F.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/K_B.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/L_C_F.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/L_C_B.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/L_F.png"));
-        bobImages.add(toolkit.getImage("SSMImages/Salome/L_B.png"));
-        
-        return bobImages;
-    }
-    public static ArrayList<Image> initSpockImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> spockImages = new ArrayList<>();
-        
-        spockImages.add(toolkit.getImage("SSMImages/Spock/S_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/S_B.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/R_1_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/R_1_B.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/R_2_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/R_2_B.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/J_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/J_B.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/K.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/K.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/L_C_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/L_C_B.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/L_F.png"));
-        spockImages.add(toolkit.getImage("SSMImages/Spock/L_B.png"));
-        
-        return spockImages;
-    }
-    public static ArrayList<Image> initLisonImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> lisonImages = new ArrayList<>();
-        
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/S_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/S_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/R_1_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/R_1_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/R_2_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/R_2_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/J_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/J_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/K_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/K_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/L_C_F.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/L_C_B.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/L_1.png"));
-        lisonImages.add(toolkit.getImage("SSMImages/Lison/L_2.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/S_F.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/S_B.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/R_F_1.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/R_B_1.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/R_F_2.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/R_B_2.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/J_F.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/J_B.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/K_F.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/K_B.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/L_C_F.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/L_C_B.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/L_F.png"));
+        images.add(toolkit.getImage("SSMImages/"+playerName+"/L_B.png"));
 
-        return lisonImages;
+        return images;
     }
-    public static ArrayList<Image> initObamaImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> ObamaImages = new ArrayList<>();
-        
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/S_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/S_B.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/R_1_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/R_1_B.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/R_2_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/R_2_B.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/J_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/J_B.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/K.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/K.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/L_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/L_B.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/L_F.png"));
-        ObamaImages.add(toolkit.getImage("SSMImages/Obama/L_B.png"));
 
-        return ObamaImages;
-    }
-    public static ArrayList<Image> initEmiImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> EmiImages = new ArrayList<>();
-        
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/S_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/S_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/R_1_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/R_1_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/R_2_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/R_2_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/J_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/J_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/K_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/K_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/L_C_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/L_C_B.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/L_F.png"));
-        EmiImages.add(toolkit.getImage("SSMImages/Emi/L_B.png"));
 
-        return EmiImages;
-    }
-    public static ArrayList<Image> initLawrenceImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> lawrenceImages = new ArrayList<>();
-        
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/S_F.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/S_B.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/R_F_1.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/R_B_1.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/R_F_2.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/R_B_2.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/J_F.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/J_B.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/K_F.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/K_B.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/L_C_F.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/L_C_B.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/L_F.png"));
-        lawrenceImages.add(toolkit.getImage("SSMImages/Lawrence/L_B.png"));
-        
-        return lawrenceImages;
-    }
-    public static ArrayList<Image> initNeelImages(){
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        ArrayList<Image> neelImages = new ArrayList<>();
-                
-        neelImages.add(toolkit.getImage("SSMImages/Neel/S_F.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/S_B.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/R_F_1.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/R_B_1.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/R_F_2.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/R_B_2.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/J_F.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/J_B.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/K_F.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/K_B.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/L_C_F.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/L_C_B.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/L_F.png"));
-        neelImages.add(toolkit.getImage("SSMImages/Neel/L_B.png"));
-        
-        return neelImages;
-    }
-    
-    //----------------------------------------
-    //Attacks and Abilities
-    //----------------------------------------
-    public void doJAttack(){
-        if(getCharacter() == UMER || character == KAUSHAL || character == SALOME 
-                || character == EMI || character == LAWRENCE){
-            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),2, true);
-            if(character == EMI){
-                myPunch.setSize(180,5);
-                myPunch.setPunchCD(myPunch.getPunchCD()*2);
-            } else if(character == LAWRENCE){
-                myPunch.setSize(60,5);
-                myPunch.setPunchCD(myPunch.getPunchCD()*1.25);
-            }
+    /**
+     * Methods
+     */
+    public void draw(Graphics g, ImageObserver io){
+
+        int[] triangle1XPoints = {20,50,50};
+        int[] triangle2XPoints = {1070,1040,1040};
+        int[] triangleYPoints = {(int)getY(),(int)getY()-10,(int)getY()+10};
+
+        g.setColor(color);
+        if(getX()<0)
+            g.fillPolygon(triangle1XPoints,triangleYPoints,3);
+        if(getX()>1050)
+            g.fillPolygon(triangle2XPoints,triangleYPoints,3);
+
+        Image myCurrentImage;
+
+        if(character==LISON && lAttackTimer>0){
+            if(nadoTimer>0.1)
+                myImageIndex = L_ATTACK_FORWARD;
+            else
+                myImageIndex = L_ATTACK_BACKWARD;
         }
-        else if(character == MATEI){
-            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4,
-                    10,10,getDirection(),getTeam(), false);
-            pList.add(myProj);
-        } else if(character == OBAMA){
-            myRocket = new Rocket((int)getX()+getW()/2,(int)getY()-20+character*3,getDirection(),getTeam());
-            myRocket.setXVel(myRocket.getXVel());
-        }else if(character == NEEL){
-            if(direction == Projectile.LEFT){
-                Projectile myProj = new Projectile((int)getX()+getW()/2-40,(int)getY()+getH()/4-10,
-                        65,10,getDirection(),getTeam(), false);
-                pList.add(myProj);
-            } else {
-                Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                        65,10,getDirection(),getTeam(), false);
-                pList.add(myProj);
-            }
+
+        if(character<myInGameImageLists.size() && !myInGameImageLists.get(character).isEmpty())
+            myCurrentImage = myInGameImageLists.get(character).get(myImageIndex);
+        else
+            myCurrentImage = myImages.get(character);
+
+        if(isBoss())
+            myCurrentImage = miscImages.get(2);
+
+        drawName(g);
+
+        if(taunting){
+            g.setFont(new Font("Sans Serif", Font.BOLD, 20));
+            g.setColor(Color.white);
+            g.drawString(myTaunts.get(character), (int)getX()+(int)getW()/2-60,(int)getY()-30);
+            g.drawImage(myCurrentImage,(int)getX(),(int)getY()+getH()/2,getW(),getH()/2, io);
         } else {
-            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                    10,10,getDirection(),getTeam(), false);
-            pList.add(myProj);
+            g.drawImage(myCurrentImage,(int)getX(),(int)getY(),getW(),getH(), io);
         }
-        
-        isHealing = false;
+
+        if(isStunned()){
+            if(stunner == PlayerOld.LISON || stunner == PlayerOld.NEEL){
+                g.drawImage(miscImages.get(3), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
+            }
+            else if(stunner == RISHI){
+                g.drawImage(miscImages.get(8), (int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
+            }
+            else{
+                if(stunDrawTimer > 0.35)
+                    g.drawImage(miscImages.get(0), (int)getX(),(int)getY()-37,getW(),37,io);
+                else
+                    g.drawImage(miscImages.get(1), (int)getX(),(int)getY()-37,getW(),37,io);
+            }
+        }
+        if(isFlaming()){
+            if(flameDrawTimer > 0.35)
+                g.drawImage(miscImages.get(6),(int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
+            else
+                g.drawImage(miscImages.get(7),(int)getX()-5,(int)getY()-5,getW()+10,getH()+10, io);
+        }
+
+        if(isConfused())
+            g.drawImage(miscImages.get(5), (int)getX(),(int)getY()-50,getW(),37,io);
+
+        //draw the sticky projectiles on you
+        for(int i=0; i<stickyLocs.size(); i++){
+            g.setColor(Color.green);
+            g.fillOval(stickyLocs.get(i).x+(int)getX(),stickyLocs.get(i).y+(int)getY(),10,10);
+        }
+
+
+        //testing
+        if(myMimic != null){
+            g.setColor(Color.WHITE);
+            //g.drawString(team+" mimic: "+myMimic.getTeam(),20,100);
+        }
     }
-    public void animateAndDrawJAttack(ArrayList<Player> playerList, ArrayList<Projectile> enemyPList,
-            Player enemy, Graphics g, ImageObserver io){
+    public void drawName(Graphics g){
+        if(playerName.length() > 12) {
+            //Font size = (pixels per letter) / 0.6
+            g.setFont(new Font(Font.MONOSPACED, Font.BOLD, (int) ((200.0 / playerName.length()) / .6)));
+            g.drawString(playerName, (int) getX() + getW() / 2 - 200/2, (int) getY() - 10);
+        }
+        else {
+            int width = (int)(25 * 0.6 * playerName.length());
+            g.setFont(new Font(Font.MONOSPACED,Font.BOLD,25));
+            g.drawString(playerName, (int) getX() + getW() / 2 - width/2, (int) getY() - 10);
+        }
+    }
+
+    public void baseAnimate(){
+        setXVel(damageXVel+inputXVel + airInputXVel);
+
+        if(getY()+getH() >= getGround()) {
+            damageXVel *= FRICTION;
+            inputXVel *= FRICTION;
+            airInputXVel *= FRICTION;
+        }
+
+        super.animate();
+    }
+    public void animate(){
+        baseAnimate();
+        //animate spock's boss mode
+        if(isBoss)
+            animateBoss();
+        //handle stun timers and such
+        handleTimers();
+        //You can't heal past 0 percentage
+        if(getPercentage()<0)
+            setPercentage(0);
+        //can't be on motorcycle if you are stunned
+        if(isStunned())
+            myMoto = null;
+        //If i'm dashing slow down rapidly
+        if(isDashing()) {
+            damageXVel *= .75;
+            inputXVel *= .75;
+        }
+        //Handle being on fire. You move kind of sporadically
+        if(isFlaming()){
+            setPercentage(getPercentage() + .075);
+
+            if((int)(Math.random()*2) == 1)
+                setX(getX()+2);
+            else
+                setX(getX()-2);
+        }
+    }
+    public void animateBoss(){
+        if(!isOnGround())
+            setYVel(getYVel()-Actor.GRAVITY);
+        setYVel(getYVel()*.75);
+        damageXVel *= .75;
+        inputXVel *= .75;
+
+        setSize(180,270);
+
+        bossAttackTimer -= 1.0/60;
+
+        if(bossAttackTimer < 0){
+            HomingShot myProj = new HomingShot((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    getDirection(),getTeam(), character, isBoss,false);
+            myProjectiles.add(myProj);
+            if(myRain != null){
+                if(myRain.getY()>700)
+                    doKAttack();
+            }
+            bossAttackTimer = .5;
+        }
+    }
+
+    public void handleTimers(){
+        if(stunDuration > 0)
+            stunDuration -= 1.0/60;
+        else
+            stunDuration = 0;
+
+        if(flameDuration > 0)
+            flameDuration -= 1.0/60;
+        else
+            flameDuration = 0;
+
+        if(confusionDuration > 0)
+            confusionDuration -= 1.0/60;
+        else
+            confusionDuration = 0;
+
+        if(nadoTimer > 0)
+            nadoTimer-=1.0/60;
+        else
+            nadoTimer = 0.2;
+
+        if(lAttackCooldown > 0)
+            lAttackCooldown -=1.0/60;
+        else
+            lAttackCooldown = 0;
+
+        if(flameDrawTimer > 0)
+            flameDrawTimer -= 1.0/60;
+        else
+            flameDrawTimer = .7;
+
+        if(stunDrawTimer > 0)
+            stunDrawTimer -= 1.0/60;
+        else
+            stunDrawTimer = .7;
+
+        if(lAttackTimer > 0)
+            lAttackTimer -= 1.0/60;
+        else{
+            lAttackTimer = 0;
+            myStick = null;
+        }
+
+    }
+
+    public void drawAttacks(Graphics g, ImageObserver io){
+        //Streams through projectiles and draws them
+        myProjectiles.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
+        //Streams through rockets and draws them
+        myRockets.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
+        //draw punch
+        if(myPunch!=null)
+            myPunch.draw(g,io);
+        //draw vertical punch
+        if(myVPunch!=null)
+            myVPunch.draw(g,io);
+        //draw lightning
+        if(myLightning!=null)
+            myLightning.draw(g,io);
+        //draw L attack
+        myLAttacks.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
+        //draw moto
+        if(myMoto!=null)
+            myMoto.draw(g,io);
+        //draw stick
+        if(myStick!=null)
+            myStick.draw(g,io);
+        //draw rain
+        if(myRain!=null)
+            myRain.draw(g,io);
+        //Streams through boomerangs and draws them
+        myBoomerangs.stream().filter(Objects::nonNull).forEach(r->r.draw(g,io));
+        //Draw the explosion
+        myExplosions.stream().filter(Objects::nonNull).forEach(p-> p.draw(g, io));
+        //draw mitosis bryce
+        if(myMimic != null){
+            if(lAttackTimer > 0) {
+                if(getX() + getW() / 2.0 < AnimationPanel.width / 2.0)
+                    g.drawImage(myInGameImageLists.get(BRYCE).get(L_ATTACK_FORWARD),
+                            (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(),io);
+                else
+                    g.drawImage(myInGameImageLists.get(BRYCE).get(L_ATTACK_BACKWARD),
+                            (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(),io);
+            }
+            else{
+                g.drawImage(myInGameImageLists.get(BRYCE).get(myImageIndex + direction),
+                        (int)myMimic.getX(),(int)myMimic.getY(),myMimic.getW(),myMimic.getH(), io);
+            }
+        }
+    }
+    public void animateAttacks(ArrayList<Player> players){
+        //Animate only my Projectiles
+        for(int i=myProjectiles.size()-1; i>=0; i--){
+            Projectile p = myProjectiles.get(i);
+            if(p!=null){
+                //if I am spock my J Attack switches direction when I move
+                if(character == SPOCK && !isBoss){
+                    p.setDirection(direction);
+                    p.setY(getY());
+                }
+                p.animateMovement(players);
+                p.animateDamage(players);
+
+                if(p.isNull())
+                    myProjectiles.remove(i);
+                else if(p.outOfBounds())
+                    myProjectiles.remove(i);
+                else if(p.getXVel() == 0)
+                    myProjectiles.remove(i);
+            }else
+                myProjectiles.remove(i);
+        }
+        //Animate only my Rockets
+        for(int i=myRockets.size()-1; i>=0; i--){
+            Rocket r = myRockets.get(i);
+            if(r!=null){
+                r.animateMovement();
+                r.animateDamage(players);
+
+                if(r.outOfBounds())
+                    myRockets.remove(i);
+                else if(r.getXVel() == 0)
+                    myRockets.remove(i);
+            }else
+                myRockets.remove(i);
+        }
+        //Animate my punch
         if(myPunch!=null){
-            myPunch.draw(this, g,io);
-            myPunch.animate(this, enemy);
+            //Make sure the punch is always at your current position
+            myPunch.setX(getX());
+            myPunch.setY(getY());
+            myPunch.setShooterSize(getW(),getH());
+
+            myPunch.animate(players);
+            //If done animating punch, nullify it
             if(!myPunch.getCanHurt())
                 myPunch = null;
         }
-        if(enemyPunch != null){
-            enemyPunch.draw(enemy,g,io);
-            enemyPunch.animate(enemy,this);
-        }
-
-        for(int i=pList.size()-1;i>=0;i--){
-            if(pList.get(i)!= null){
-                Projectile p = pList.get(i);
-                if(!p.playedSFX() && (character == MATEI 
-                        || character == SALOME || character == JACK)){
-                    Projectile.playSFX();
-                    p.setPlayedSFX(true);
-                }
-                if(getCharacter() == ADAM)
-                    p.setColor(Color.red);
-                else if(getCharacter() == LISON)
-                    p.setColor(new Color(3,190,252));
-                else
-                    p.setColor(Color.gray);
-                p.draw(this, g, io);
-                p.animateDamage(playerList, this);
-                p.animateMovement(enemy);
-                if(p.isNull())
-                    pList.remove(p);
-            }
-            else
-                pList.remove(i);
-        }
-        for(Projectile p: enemyPList){
-            if(p!= null){
-                if(!p.playedSFX() && (enemy.getCharacter() == MATEI 
-                        || enemy.getCharacter() == SALOME || enemy.getCharacter() == JACK)){
-                    Projectile.playSFX();
-                    p.setPlayedSFX(true);
-                }
-                if(enemy.getCharacter() == ADAM)
-                    p.setColor(Color.red);
-                else if(enemy.getCharacter() == LISON)
-                    p.setColor(new Color(3,190,252));
-                else
-                    p.setColor(Color.gray);
-                p.draw(enemy, g, io);
-                p.animateDamage(playerList, enemy);
-            }
-        }
-
-    }
-    
-    public void doKAttack(){
-        //Umer Vertical Punch
-        if(getCharacter() == UMER){
-            myVPunch = new VerticalPunch((int)getX(),(int)getY(), getDirection(), getTeam(),2,true);
-        }
-        //Matei Lison and Neel
-        else if(getCharacter() == MATEI || character == LISON || character == NEEL){
-            myRocket = new Rocket((int)getX()+getW()/2,(int)getY()-20+character*3,getDirection(),getTeam());
-        } 
-        //Adam Lightning
-        else if(getCharacter() == ADAM){
-            myLightning = new Lightning((int)getX(),(int)getY(),getDirection(),getTeam(),1, false,1.9);
-        } 
-        //Jack Motorcycle
-        else if(getCharacter() == JACK){
-            if(myMoto == null)
-                myMoto = new Motorcycle((int)getX(),(int)getY(),getDirection(),getTeam(),false);
-            else
-                myMoto = null;
-        } 
-        //Kaushal healing
-        else if(getCharacter() == KAUSHAL){
-            isHealing = !isHealing;
-        } 
-        //Salome Projectile
-        else if(character == SALOME){
-            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                    10,10,getDirection(),getTeam(), false);
-            pList.add(myProj);
-        } 
-        //Spock Raining Code
-        else if(character == SPOCK){
-           myRain = new RainingCode(-800);
-        } 
-        //Obama Secret Service
-        else if(character == OBAMA){
-            Projectile bg1 = new Projectile((int)getX(),(int)getY(),
-                    getW(),getH(),Projectile.LEFT,getTeam(), false);
-            Projectile bg2 = new Projectile((int)getX(),(int)getY(),
-                    getW(),getH(),Projectile.RIGHT,getTeam(), false);
-            pList.add(bg1); pList.add(bg2);
-        } 
-        //Emi Confusion
-        else if(character == EMI){
-            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                    30,45,getDirection(),getTeam(), false);
-            pList.add(myProj);
-        } 
-        //Lawrence Boomerang
-        else if(character == LAWRENCE){
-                myBoomerang = new Boomerang((int)getX(),(int)getY(),getDirection(),
-                        (int)getX()+getDirection()*800, false, getTeam(), false, 1);
-        }
-    }
-    public void animateAndDrawKAttack(ArrayList<Player> players,Player enemy, 
-            Graphics g, ImageObserver io){
-
+        //Animate my VerticalPunch
         if(myVPunch!=null){
-            myVPunch.draw(this, g,io);
-            myVPunch.animate(this, enemy);
+            //Make sure the punch is always at your current position
+            myVPunch.setX(getX());
+            myVPunch.setY(getY());
+            myVPunch.setShooterSize(getW(),getH());
+
+            myVPunch.animate(players);
+            //If done animating punch, nullify it
             if(!myVPunch.getCanHurt())
                 myVPunch = null;
         }
-        if(enemyVPunch!=null){
-            enemyVPunch.draw(enemy,g,io);
-            enemyVPunch.animate(enemy,this);
-        }
-        
-        if(myRocket!=null){
-            myRocket.draw(g,io,this);
-            myRocket.animateDamage(players,this);
-            myRocket.animateMovement();
-        }
-        if(enemyRocket != null){
-            enemyRocket.draw(g,io,enemy);
-            enemyRocket.animateDamage(players,enemy);
-        }
+        //Animate Lightning
         if(myLightning != null){
+            //Put lightning in front of your hands
+            myLightning.setX(getX());
+            myLightning.setY(getY());
             myLightning.setDirection(direction);
-            myLightning.animate(this,enemy);
-            myLightning.draw(this,g, io);
+
+            myLightning.animate(players);
             if(myLightning.isNull())
                 myLightning = null;
         }
-        if(enemyLightning != null){
-            enemyLightning.animate(enemy,this);
-            enemyLightning.draw(enemy,g, io);
+        //Animate LAttack
+        for(int i = myLAttacks.size()-1; i >= 0; i--){
+            GrowingLAttack myLAttack = myLAttacks.get(i);
+
+            if(myLAttack != null) {
+                myLAttack.animateMovement();
+                myLAttack.animateDamage(players);
+
+                if (myLAttack.outOfBounds())
+                    myLAttacks.remove(i);
+            } else
+                myLAttacks.remove(i);
         }
-        
+        //Animate Motorcycle
         if(myMoto != null){
+            //Make sure the motorcycle is in the right spot
             myMoto.setDirection(direction);
-            myMoto.animate(this,enemy);
-            myMoto.draw(this,g, io);
+            myMoto.setX(getX());
+            myMoto.setY(getY());
+
+            motoMove(direction);
+
+            myMoto.animate(players);
             if(myMoto.isNull())
                 myMoto = null;
         }
-        if(enemyMoto != null){
-            enemyMoto.animate(enemy,this);
-            enemyMoto.draw(this,g, io);
-            if(enemyMoto.isNull())
-                enemyMoto = null;
+        //Animate Stunning Stick
+        if(myStick != null){
+            //Set the stick location to my location
+            myStick.setX(getX());
+            myStick.setY(getY());
+
+            myStick.animate(players);
         }
+        //Animate raining codes
+        if(myRain != null){
+            myRain.animate(players);
+            //If rain is offscreen stop drawing it
+            if(myRain.getY()>=700)
+                myRain = null;
+        }
+        //Animate boomerangs
+        for(int i=myBoomerangs.size()-1; i>=0; i--){
+            Boomerang b = myBoomerangs.get(i);
+            if(b!=null){
+                b.setIntersecting(this.intersects(b));
+                b.animateMovement();
+                b.animateDamage(players);
+                if(b.isNull())
+                    myBoomerangs.remove(i);
+            }else
+                myBoomerangs.remove(i);
+        }
+        //Kaushal's healing
         if(isHealing){
             if(getPercentage() > 0)
                 setPercentage(getPercentage()-0.3);
             if(getXVel() < -3 || getXVel() > 3)
                 isHealing = false;
         }
-        if(myRain != null){
-            myRain.animate(enemy,this);
-            myRain.draw(g,io,this);
-	    if(myRain.getY()>=700)
-		myRain = null;
+        //Animate the explosions
+        for(int i=myExplosions.size()-1; i>=0; i--){
+            Explosion e = myExplosions.get(i);
+            if(e != null){
+                e.animate(players);
+                if(e.isNull())
+                    myExplosions.remove(e);
+            } else
+                myExplosions.remove(e);
         }
-        if(enemyRain != null){
-            enemyRain.animate(this,enemy);
-            enemyRain.draw(g,io,enemy);
+        //animate Bryce's mimic
+        if(myMimic != null){
+            if(lAttackTimer <= 0) {
+                myMimic.animate();
+                //if the mimic dies, it's null
+                Rectangle screenBounds = new Rectangle(-200,-300,AnimationPanel.width+450,AnimationPanel.height+400);
+                if(!screenBounds.contains(myMimic.getHitBox()))
+                    myMimic = null;
+            }
         }
-        
-        if(myBoomerang != null){
-            myBoomerang.animateDamage(players, this);
-            myBoomerang.animateMovement(this);
-            myBoomerang.draw(g, io);
-            if(myBoomerang.isNull())
-                myBoomerang = null;
+        //sticky projectile timers
+        for(int i = stickyTimers.size()-1; i>=0; i--){
+            if(stickyTimers.get(i) > 0)
+                stickyTimers.set(i, stickyTimers.get(i) - 1.0/60);
+            else{
+                Point p = stickyLocs.get(i);
+                myExplosions.add(new Explosion(p.x+(int)getX(),p.y+(int)getY(),100,100,
+                        stickyTeam.get(i),.4,false,BRYCE));
+                stickyTimers.remove(i);
+                stickyLocs.remove(i);
+                stickyTeam.remove(i);
+                numStickyProjectiles--;
+                mySFX.add("stickyExplosion");
+            }
         }
-        if(enemyBoomerang != null){
-            enemyBoomerang.animateDamage(players, enemy);
-            enemyBoomerang.draw(g, io);
+
+        //Animate Matei's Minigun, Lison's tornado, and Salome's dash, and Bryce's split drawing
+        animateLAttacks(players);
+    }
+    public void animateLAttacks(ArrayList<Player> players){
+        //Shoot a stream of projectiles
+        if(getCharacter() == MATEI){
+            if(lAttackTimer > 0){
+                Projectile myProj;
+                if(direction == Projectile.RIGHT)
+                    myProj = new Projectile((int)getX()+getW(),(int)getY()+4+getH()/4,
+                            9,9,getDirection(),getTeam(), character,false,false);
+                else
+                    myProj = new Projectile((int)getX()-10,(int)getY()+4+getH()/4,
+                            9,9,getDirection(),getTeam(), character,false,false);
+
+                myProjectiles.add(myProj);
+                mySFX.add("gun");
+            }
+        }
+        //Animate Lison's tornado
+        if(getCharacter() == LISON){
+            if(lAttackTimer > 0){
+                setSize(116,90); //change the size so the image isn't squished
+                inputXVel = 8*direction; //You can't stand still if you're a tornado
+
+                for(Player enemy : players) {
+                    if (this.getHitBox().intersects(enemy.getHitBox())
+                            && !team.equals(enemy.getTeam())
+                            && !enemy.isUntargetable()) {
+                        enemy.setPercentage(enemy.getPercentage() + 0.3);
+                        enemy.setDamageXVel((2.5 + 4 * enemy.getPercentage() / 25) * direction);
+                    }
+                }
+            } else //If she's not L attacking make her normal again
+                setSize(60,90);
+        }
+        //Animate salome's damaging dash
+        if(isDashing()){
+            for(Player enemy : players){
+                if(getHitBox().intersects(enemy.getHitBox())){
+                    enemy.setPercentage(enemy.getPercentage()+5.5);
+                    enemy.setDamageXVel(1.5*getXVel()/60*(0.5+1.5*enemy.getPercentage()/20));
+                    enemy.setYVel(.5*(enemy.getYVel()-1.5-2*enemy.getPercentage()/50));
+                }
+            }
+        }
+        //Animate drawing Bryce's split
+        if(character == BRYCE){
+            if(lAttackTimer > 0 && myMimic != null){
+                myMimic.setX((int)getX() + (int)((AnimationPanel.width - getX()*2 - getW()) * ((MAX_L - lAttackTimer)/MAX_L)));
+                lAttackTimer += 1.0/120;
+            }
         }
     }
-    
+
+    public void doJAttack(){
+        //If I am umer, kaushal, salome, emi, or lawrence; my J attack acts as a punch
+        if(getCharacter() == UMER || character == KAUSHAL || character == SALOME
+                || character == EMI || character == LAWRENCE){
+            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),2, true,character,getW(),getH(), 30, 5);
+            if(character == EMI){
+                myPunch.setSize(180,5);
+                myPunch.setPunchCD(myPunch.getPunchCD()*2);
+            } else if(character == LAWRENCE || character == KAUSHAL){
+                myPunch.setSize(60,5);
+                myPunch.setPunchCD(myPunch.getPunchCD()*1.25);
+            }
+            // punch sound effects
+            if(character == UMER || character == SALOME || character == EMI)
+                mySFX.add("punch");
+        }
+        //If I am Matei, my J attack acts as a projectile
+        else if(character == MATEI){
+            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4,
+                    10,10,getDirection(),getTeam(), character, false, false);
+            myProjectiles.add(myProj);
+            mySFX.add("gun");
+        }
+        //If I am Obama, my J attack is a rocket
+        else if(character == OBAMA){
+            Rocket myRocket = new Rocket((int)getX()+getW()/2,(int)getY()-20+character*3,50,50,getDirection(),
+                    getTeam(),character);
+            myRocket.setXVel(myRocket.getXVel());
+            myRockets.add(myRocket);
+        }
+        //If I am neel, my J attack acts as a projectile with direction and different size
+        else if(character == NEEL){
+            if(direction == Projectile.LEFT){
+                Projectile myProj = new Projectile((int)getX()+getW()/2-40,(int)getY()+getH()/4-10,
+                        65,10,getDirection(),getTeam(),character, false, false);
+                myProjectiles.add(myProj);
+            } else {
+                Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                        65,10,getDirection(),getTeam(),character, false, false);
+                myProjectiles.add(myProj);
+            }
+        }
+        //If I am spock, my J attack is a projectile that is as big as me
+        else if(character == SPOCK){
+            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    getW(),getH(),getDirection(),getTeam(),character, isBoss,false);
+            myProjectiles.add(myProj);
+        }
+        //If I am Bryce my J attack is a sticky projectile that blows up later
+        else if(character == BRYCE){
+            StickyProjectile myProj = new StickyProjectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    20,20,getDirection(),getTeam(),character, false);
+            myProjectiles.add(myProj);
+            mySFX.add("stickyShot");
+
+            if(myMimic != null) {
+                myProj = new StickyProjectile((int) myMimic.getX() + getW() / 2, (int) myMimic.getY() + getH() / 4 - 10,
+                        20, 20, -1 * getDirection(), getTeam(), character, false);
+                myProjectiles.add(myProj);
+                mySFX.add("stickyShot");
+            }
+        }
+        //Rishi mini tennis boomerang
+        else if(character == RISHI){
+            myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),10,10,getDirection(),
+                    (int)getX()+getDirection()*800, false, getTeam(),
+                    false, 1, character));
+            mySFX.add("tennis");
+        }
+        //If I am not a character jack or adam, my J attack is a simple projectile
+        else {
+            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    10,10,getDirection(),getTeam(),character, false, false);
+            myProjectiles.add(myProj);
+            if(character == JACK)
+                mySFX.add("gun");
+            if(character == ADAM)
+                mySFX.add("fireball");
+        }
+
+        isHealing = false;
+    }
+    public void doKAttack(){
+        //Umer Vertical Punch
+        if(getCharacter() == UMER){
+            myVPunch = new VerticalPunch((int)getX(),(int)getY(), getDirection(), getTeam(),
+                    2, true,character,getW(),getH());
+        }
+        //Matei Lison and Neel
+        else if(getCharacter() == MATEI || character == LISON || character == NEEL){
+            Rocket rocket = new Rocket((int)getX()+getW()/2,(int)getY()-20+character*3,50,50,getDirection(),
+                    getTeam(),character);
+            if(character == NEEL)
+                rocket.setSize(65,10);
+            if(character == MATEI)
+                mySFX.add("rocket");
+
+            myRockets.add(rocket);
+        }
+        //Adam Lightning
+        else if(getCharacter() == ADAM){
+            myLightning = new Lightning((int)getX(),(int)getY(),getDirection(),getTeam(),
+                    1, false,1.9,character);
+            mySFX.add("electricity");
+        }
+        //Jack Motorcycle
+        else if(getCharacter() == JACK){
+            if(myMoto == null)
+                myMoto = new Motorcycle((int)getX(),(int)getY(),getDirection(),getTeam(),false);
+            else
+                myMoto = null;
+        }
+        //Kaushal healing
+        else if(getCharacter() == KAUSHAL){
+            isHealing = !isHealing;
+        }
+        //Salome Projectile
+        else if(character == SALOME){
+            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    10,10,getDirection(),getTeam(), character,false,false);
+            myProjectiles.add(myProj);
+            mySFX.add("gun");
+        }
+        //Spock Raining Code
+        else if(character == SPOCK){
+            myRain = new RainingCode(60,-800, team,character);
+        }
+        //Obama Secret Service
+        else if(character == OBAMA){
+            Projectile bg1 = new Projectile((int)getX(),(int)getY(),
+                    getW(),getH(),Projectile.LEFT,getTeam(), character ,false,false);
+            Projectile bg2 = new Projectile((int)getX(),(int)getY(),
+                    getW(),getH(),Projectile.RIGHT,getTeam(), character,false,false);
+            myProjectiles.add(bg1); myProjectiles.add(bg2);
+        }
+        //Emi Confusion
+        else if(character == EMI){
+            Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
+                    30,45,getDirection(),getTeam(), character,false,false);
+            myProjectiles.add(myProj);
+        }
+        //Lawrence Boomerang
+        else if(character == LAWRENCE){
+            myBoomerangs.add(new Boomerang((int)getX(),(int)getY(),60,30,getDirection(),
+                    (int)getX()+getDirection()*800, false, getTeam(),
+                    false, 1, character));
+        }
+        //Bryce switch + explosion
+        else if(character == BRYCE){
+            double oldX = getX(); double oldY = getY();
+
+            if(myMimic != null) {
+                setX(myMimic.getX());
+                setY(myMimic.getY());
+                myMimic.setX(oldX);
+                myMimic.setY(oldY);
+
+                myExplosions.add(new Explosion((int) (oldX + getW() / 2.0), (int) (oldY + getH() / 2.0), 150,
+                        150, team, .4, false, character));
+            }
+
+            myExplosions.add(new Explosion((int) (getX() + getW() / 2.0), (int) (getY() + getH() / 2.0), 150,
+                    150, team, .4, false, character));
+            mySFX.add("stickyExplosion");
+        }
+        //Rishi net
+        else if(character == RISHI){
+            myPunch = new Punch((int)getX(),(int)getY(),getDirection(),getTeam(),8,
+                    true,character,getW(),getH(),180,25);
+            mySFX.add("net");
+        }
+    }
     public void chargeLAttack(){
-        if(character == ADAM || character == UMER )
+        if(character == ADAM || character == UMER || character == RISHI)
             chargingLAttackStrength+=1.0/300;
         else if(character == JACK)
             chargingLAttackStrength+=1.0/60;
@@ -949,392 +1023,305 @@ public class Player extends Actor{
             chargingLAttackStrength+=1.0/160;
         else if(character == SPOCK || character == EMI)
             chargingLAttackStrength+=1.0/450;
-        if(chargingLAttackStrength > MAX_L || character == LISON 
+        if(chargingLAttackStrength > MAX_L || character == LISON
                 || character == OBAMA || character == LAWRENCE
-                || character == NEEL)
+                || character == NEEL || character == BRYCE) {
             chargingLAttackStrength = MAX_L;
-        
+        }
+
         isHealing = false;
     }
     public void releaseLAttack(){
         lAttackStrength = chargingLAttackStrength;
         lAttackTimer = chargingLAttackStrength;
         chargingLAttackStrength = 0;
-                
+
         lAttackCooldown = 2.5;
-        
+
         if(character == ADAM || character == UMER){
             int size = (int)(10+lAttackStrength*700);
-            myLAttack = new GrowingLAttack((int)getX(),(int)getY()+getH()/2-size/2-17,direction,getTeam(),size);
+            myLAttacks.add(new GrowingLAttack((int)getX(),(int)getY()+getH()/2-size/2-17,
+                    size, size, direction,getTeam(),size,character));
             lAttackTimer = 0;
-        } else if(character == JACK){
+
+            if(character == ADAM)
+                mySFX.add("sun");
+        }
+        else if(character == JACK){
             setYVel(-lAttackStrength*60);
             lAttackTimer = 0;
-        } else if(character == KAUSHAL){
-            myStick = new Stick((int)getX(),(int)getY(),direction,getTeam(), false, lAttackStrength * 3);
+        }
+        else if(character == KAUSHAL){
+            myStick = new Stick((int)getX(),(int)getY(),direction,getTeam(),lAttackStrength * 3,getW());
             lAttackTimer *= 2;
-        } else if(character == SALOME){
-            setXVel(lAttackStrength*300*direction);
+        }
+        else if(character == SALOME){
+            setInputXVel(lAttackStrength*300*direction);
             lAttackCooldown = 1.5;
             lAttackTimer -= 0.1;
-        } else if(character == SPOCK || character == EMI){
-            myPunch = new Punch((int)getX(),(int)getY(),direction,getTeam(),lAttackStrength*60,true);
-            myPunch.setSize(1100,200);
+        }
+        else if(character == SPOCK || character == EMI){
+            myPunch = new Punch((int)getX(),(int)getY(),direction,getTeam(),
+                    lAttackStrength*60,true,character,getW(),getH(),1100,116);
             lAttackCooldown = 9;
-        } else if(character == LISON){
+        }
+        else if(character == LISON){
             lAttackTimer = 2;
             lAttackCooldown = 7;
-        } else if(character == OBAMA){
-            myRain=new RainingCode(-600);
+        }
+        else if(character == OBAMA){
+            myRain=new RainingCode(60,-600,getTeam(),character);
             lAttackTimer *= 3;
             lAttackCooldown = 8;
-        } else if(character == LAWRENCE){
-            myLightning = new Lightning((int)getX(),(int)getY(),getDirection(),getTeam(),1, false,1.9);
+        }
+        else if(character == LAWRENCE){
+            myLightning = new Lightning((int)getX(),(int)getY(),getDirection(),getTeam(),1,
+                    false,1.9,character);
             lAttackTimer = 1.9;
             lAttackCooldown = 5.0;
-        } else if(character == NEEL){
+        }
+        else if(character == NEEL){
             if(direction == Projectile.LEFT){
                 Projectile myProj = new Projectile((int)getX()+getW()/2-40,(int)getY()+getH()/4-10,
-                        81,13,getDirection(),getTeam(), false);
-                pList.add(myProj);
+                        81,13,getDirection(),getTeam(),character,false, false);
+                myProjectiles.add(myProj);
             } else {
                 Projectile myProj = new Projectile((int)getX()+getW()/2,(int)getY()+getH()/4-10,
-                        81,13,getDirection(),getTeam(), false);
-                pList.add(myProj);
+                        81,13,getDirection(),getTeam(),character,false, false);
+                myProjectiles.add(myProj);
             }
             lAttackCooldown = 5.0;
         }
-    }
-    public void animateAndDrawLAttack(ArrayList<Player> players,Player enemy,
-            Graphics g, ImageObserver io){
-        if(lAttackCooldown > 0)
-            lAttackCooldown -=1.0/60;
-        else
-            lAttackCooldown = 0; 
-        
-        if(lAttackTimer > 0)
-            lAttackTimer -= 1.0/60;
-        else{
-            lAttackTimer = 0;
-            myStick = null;
+        else if(character == BRYCE){
+            myMimic = new Player((int)getX(),(int)getY(),getW(),getH(),playerID);
+            lAttackCooldown = 35.0;
         }
-        
-        if(getCharacter() == MATEI){
-            if(lAttackTimer > 0){
-                Projectile myProj;
-                if(direction == Projectile.RIGHT)
-                    myProj = new Projectile((int)getX()+getW(),(int)getY()+4+getH()/4,
-                            9,9,getDirection(),getTeam(), false);
-                else
-                    myProj = new Projectile((int)getX()-10,(int)getY()+4+getH()/4,
-                            9,9,getDirection(),getTeam(), false);
-                
-                pList.add(myProj);
-            }
-        }
-        if(getCharacter() == LISON){
-            if(lAttackTimer > 0){
-                setSize(116,90);
-                setXVel(8*direction);
-                
-                if(this.getHitBox().intersects(enemy.getHitBox())
-                        && !team.equals(enemy.getTeam())
-                        && !enemy.isUntargetable()){
-                    enemy.setPercentage(enemy.getPercentage()+0.3);
-                    enemy.setXVel((2.5+4*enemy.getPercentage()/25)*direction);
-                }
-            } else
-                setSize(60,90);
-        }
-        if(enemy.getCharacter() == LISON){
-            if(enemy.getLAttackTimer() > 0){                
-                if(enemy.getHitBox().intersects(getHitBox())){
-                    setPercentage(getPercentage()+0.3);
-                    setXVel((2.5+4*getPercentage()/25)*enemy.getDirection());
-                }
-            }
-        }
-        if(myLAttack!=null){
-            //ADAM
-            if(character == ADAM)
-                myLAttack.setImage(GrowingLAttack.SUN);
-            //UMER
-            else if(character == UMER && direction == Projectile.RIGHT)
-                myLAttack.setImage(GrowingLAttack.HEAD_F);
-            else if(character == UMER && direction == Projectile.LEFT)
-                myLAttack.setImage(GrowingLAttack.HEAD_B);
-            
-            myLAttack.animateDamage(players);
-            myLAttack.animateMovement();
-            myLAttack.draw(g,io);
-        }
-        if(enemyLAttack!=null){
-            if(enemy.getCharacter() == ADAM)
-                enemyLAttack.setImage(GrowingLAttack.SUN);
-            else if(enemy.getCharacter() == UMER && enemy.getDirection() == Projectile.RIGHT)
-                enemyLAttack.setImage(GrowingLAttack.HEAD_F);
-            else if(enemy.getCharacter() == UMER && enemy.getDirection() == Projectile.LEFT)
-                enemyLAttack.setImage(GrowingLAttack.HEAD_B);
-            enemyLAttack.animateDamage(players);
-            enemyLAttack.draw(g,io);
-        }
-        
-        if(myStick != null){
-            myStick.animate(this,enemy);
-            myStick.draw(this,g, io);
-        }
-        if(enemyStick != null){
-            enemyStick.animate(enemy,this);
-            enemyStick.draw(this,g, io);
-        }
-        
-        if(isDashing() && getHitBox().intersects(enemy.getHitBox())){
-            enemy.setPercentage(enemy.getPercentage()+5.5);
-            enemy.setXVel(1.5*getXVel()/60*(0.5+1.5*enemy.getPercentage()/20));
-            enemy.setYVel(.5*(enemy.getYVel()-1.5-2*enemy.getPercentage()/50));
-        }
-        if(enemyIsDashing && enemy.getHitBox().intersects(getHitBox())){
-            this.setPercentage(this.getPercentage()+5.5);
-            this.setXVel(1.5*enemy.getXVel()/60*(0.5+1.5*this.getPercentage()/20));
-            this.setYVel(.5*(this.getYVel()-1.5-2*this.getPercentage()/50));
-        }
-    }
-    
-    
-    //----------------------------------------
-    //Packing and unpacking players
-    //----------------------------------------
-    
-    private static String parseChar = ",";
-    
-    public static String pack(Player me){
-        String packedPlayersInfo = "";
-        
-        packedPlayersInfo += me.getX()+parseChar;
-        packedPlayersInfo += me.getY()+parseChar;
-        packedPlayersInfo += me.getPercentage()+parseChar;
-        packedPlayersInfo += me.getCharacter()+parseChar;
-        packedPlayersInfo += me.getPlayerName()+parseChar;
-        packedPlayersInfo += me.getLives()+parseChar;
-        packedPlayersInfo += me.getDirection()+parseChar;
-                
-        if(me.getPunch() != null){
-            packedPlayersInfo += me.getPunch().getPunchCD() + parseChar;
-            packedPlayersInfo += me.getPunch().getCanHurt() + parseChar;
-        }else{
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
-        }
-        
-        packedPlayersInfo += me.isTaunting()+parseChar;
+        else if(character == RISHI){
+            int w = (int) (300 * (lAttackStrength * 3));
+            int h = (int) (180 * (lAttackStrength * 3));
+            myLAttacks.add(new GrowingLAttack((int)getX()+getW()-20,(int)getY()+getH()/2-h/2-17,
+                    w,h,1,getTeam(),h,character));
+            myLAttacks.add(new GrowingLAttack((int)getX()-w+20,(int)getY()+getH()/2-h/2-17,
+                    w,h,-1,getTeam(),h,character));
 
-        if(me.getRocket() != null){
-            packedPlayersInfo += me.getRocket().getX() + parseChar;
-            packedPlayersInfo += me.getRocket().getY() + parseChar;
-            packedPlayersInfo += me.getRocket().getDir() + parseChar;
-        }else{
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
+            lAttackTimer *= 3;
+            mySFX.add("whistle");
         }
-        
-        if(me.getVPunch() != null){
-            packedPlayersInfo += me.getVPunch().getPunchCD() + parseChar;
-            packedPlayersInfo += me.getVPunch().getCanHurt() + parseChar;
-        } else {
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
+    }
+
+    public void resetStickies(){
+        stickyTimers = new ArrayList<>();
+        stickyLocs = new ArrayList<>();
+        stickyTeam = new ArrayList<>();
+        numStickyProjectiles = 0;
+    }
+
+    //movement
+    public void move(int dir){
+
+        if(dir == -1 && getXVel() > -5)
+            inputXVel = 5 * dir;
+        else if(dir == 1 && getXVel() < 5)
+            inputXVel = 5 * dir;
+
+        if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 5 && dir == Projectile.RIGHT)
+            airInputXVel += .1;
+        else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -5 && dir == Projectile.LEFT)
+            airInputXVel -= .1;
+
+        if(myMimic != null){
+            myMimic.move(-dir);
         }
-        
-        packedPlayersInfo += me.getMyImageIndex() + parseChar;
-        
-        if(me.getLightning() != null){
-            packedPlayersInfo += me.getLightning().getDrawTimer() + parseChar;
-            packedPlayersInfo += me.getLightning().isNull() + parseChar;
-            packedPlayersInfo += me.getLightning().getTimer() + parseChar;
-        } else {
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "true" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-        }
-        
-        if(me.getLAttack() != null){
-            packedPlayersInfo += me.getLAttack().getX() + parseChar;
-            packedPlayersInfo += me.getLAttack().getY() + parseChar;
-            packedPlayersInfo += me.getLAttack().getDir() + parseChar;
-            packedPlayersInfo += me.getLAttack().getSizeAndDamage() + parseChar;
-        }
-        else{
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-        }
-        if(me.getMoto() != null)
-            packedPlayersInfo += "false" + parseChar;
-        else
-            packedPlayersInfo += "true" + parseChar;
-        
-        packedPlayersInfo += me.getW()+parseChar;
-        packedPlayersInfo += me.getH()+parseChar;
-        
-        if(me.getStick() != null){
-            packedPlayersInfo += me.getStick().getStrength() + parseChar;
-        } else {
-            packedPlayersInfo += "null" + parseChar;
-        }
-                
-        packedPlayersInfo += me.getStunDuration() + parseChar;
-        packedPlayersInfo += me.isDashing() + parseChar;
-        packedPlayersInfo += me.getXVel() + parseChar;
-        packedPlayersInfo += me.isBoss() + parseChar;
-        
-        if(me.getRain()!=null)
-            packedPlayersInfo += me.getRain().getY() + parseChar;
-        else
-            packedPlayersInfo += "null" + parseChar;
-        
-        packedPlayersInfo += me.getConfusionDuration() + parseChar;
-        
-        if(me.getPunch() != null){
-            packedPlayersInfo += me.getPunch().getW() + parseChar;
-            packedPlayersInfo += me.getPunch().getH() + parseChar;
-            packedPlayersInfo += me.getPunch().getDirection() + parseChar;
-        }else{
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
-        }
-        
-        packedPlayersInfo += me.getLAttackTimer() + parseChar;
-        
-        if(me.getBoomerang() != null){
-            packedPlayersInfo += (int)me.getBoomerang().getX() + parseChar;
-            packedPlayersInfo += (int)me.getBoomerang().getY() + parseChar;
-            packedPlayersInfo += me.getBoomerang().getDirection() + parseChar;
-            packedPlayersInfo += me.getBoomerang().getFinalX() + parseChar;
-            packedPlayersInfo += me.getBoomerang().isReturning() + parseChar;
-            packedPlayersInfo += me.getBoomerang().isNull() + parseChar;
-            packedPlayersInfo += me.getBoomerang().getDrawTimer() + parseChar;
-        } else {
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
-            packedPlayersInfo += "false" + parseChar;
-            packedPlayersInfo += "null" + parseChar;
-        }
-        
-        packedPlayersInfo += me.getFlameDuration() + parseChar;
-        
+    }
+    public void motoMove(int dir){
+        if(dir == -1 && getXVel() > -15)
+            inputXVel = 15 * dir;
+        else if(dir == 1 && getXVel() < 15)
+            inputXVel = 15 * dir;
+
+        if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 15 && dir == Projectile.RIGHT)
+            airInputXVel += .1;
+        else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -15 && dir == Projectile.LEFT)
+            airInputXVel -= .1;
+    }
+
+
+    /**
+     * Packing and Unpacking Players
+     */
+
+    public static final String parseChar = "/";
+    private int printTimer = 0;
+
+    public String pack(){
+        String packedPlayersInfo = "";
+
+        if(printTimer <= 0){
+            printTimer = 150;
+            //System.out.println("SFX size: "+mySFX.size());
+        } else
+            printTimer--;
+
+        //Pack the player's individual data
+        packedPlayersInfo += (int)getX()+ SSMClient.parseChar; //0
+        packedPlayersInfo += (int)getY()+SSMClient.parseChar; //1
+        packedPlayersInfo += getW()+SSMClient.parseChar; //2
+        packedPlayersInfo += getH()+SSMClient.parseChar; //3
+        packedPlayersInfo += playerID + SSMClient.parseChar; //4
+        packedPlayersInfo += getPercentage()+SSMClient.parseChar; //5
+        packedPlayersInfo += getCharacter()+SSMClient.parseChar; //6
+        packedPlayersInfo += getPlayerName()+SSMClient.parseChar; //7
+        packedPlayersInfo += getLives()+SSMClient.parseChar; //8
+        packedPlayersInfo += getDirection()+SSMClient.parseChar; //9
+        packedPlayersInfo += isTaunting()+SSMClient.parseChar; //10
+        packedPlayersInfo += getMyImageIndex() + SSMClient.parseChar; //11
+        packedPlayersInfo += getStunDuration() + SSMClient.parseChar; //12
+        packedPlayersInfo += getXVel() + SSMClient.parseChar; //13
+        packedPlayersInfo += isBoss() + SSMClient.parseChar; //14
+        packedPlayersInfo += getConfusionDuration() + SSMClient.parseChar; //15
+        packedPlayersInfo += getLAttackTimer() + SSMClient.parseChar; //16
+        packedPlayersInfo += getFlameDuration() + SSMClient.parseChar; //17
+        packedPlayersInfo += chargingLAttackStrength + SSMClient.parseChar; //18
+        packedPlayersInfo += stunner + SSMClient.parseChar; //19
+        packedPlayersInfo += stunDrawTimer + SSMClient.parseChar; //20
+        packedPlayersInfo += flameDrawTimer + SSMClient.parseChar; //21
+        packedPlayersInfo += lAttackCooldown + SSMClient.parseChar; //22
+        packedPlayersInfo += packSFX() + SSMClient.parseChar; //23
+        packedPlayersInfo += numStickyProjectiles + SSMClient.parseChar; //24
+        packedPlayersInfo += packStickyLocs() + SSMClient.parseChar; //25
+
+        packedPlayersInfo += parseChar;
+
+        //pack the attacks
+        packedPlayersInfo += Projectile.packArray(myProjectiles) + parseChar;
+        packedPlayersInfo += Rocket.packArray(myRockets) + parseChar;
+        packedPlayersInfo += Punch.pack(myPunch) + parseChar;
+        packedPlayersInfo += VerticalPunch.pack(myVPunch) + parseChar;
+        packedPlayersInfo += Lightning.pack(myLightning) + parseChar;
+        packedPlayersInfo += GrowingLAttack.packArray(myLAttacks) + parseChar;
+        packedPlayersInfo += Motorcycle.pack(myMoto) + parseChar;
+        packedPlayersInfo += isHealing + parseChar;
+        packedPlayersInfo += Stick.pack(myStick) + parseChar;
+        packedPlayersInfo += RainingCode.pack(myRain) + parseChar;
+        packedPlayersInfo += Boomerang.packArray(myBoomerangs) + parseChar;
+        packedPlayersInfo += Explosion.packArray(myExplosions) + parseChar;
+        packedPlayersInfo += packMimic() + parseChar;
+
         return packedPlayersInfo;
     }
-    public static void unPack(String s, Player enemy, Player me){
-        
-        if(testPrintTimer < 0){
-            testPrintTimer = 1;
-            //System.out.println(s);
-        } else
-            testPrintTimer -=1.0/60;
-        
-        String[] playersInfo = s.split(parseChar);
-        
-        enemy.setX(Double.parseDouble(playersInfo[0]));        
-        enemy.setY(Double.parseDouble(playersInfo[1]));
-        enemy.setPercentage(Double.parseDouble(playersInfo[2]));
-        enemy.setCharacter(Integer.parseInt(playersInfo[3]));
-        enemy.setPlayerName(playersInfo[4]);
-        enemy.setLives(Integer.parseInt(playersInfo[5]));
-        enemy.setDirection(Integer.parseInt(playersInfo[6]));
-        
-        if(!playersInfo[7].equals("null")){
-            me.setEnemyPunch(new Punch((int)enemy.getX(),(int)enemy.getY(),
-                    enemy.getDirection(),enemy.getTeam(),Double.parseDouble(playersInfo[7]), 
-                    Boolean.parseBoolean(playersInfo[8])));
-        }
-        else{
-            me.setEnemyPunch(null);
-        }
-        
-        enemy.setTaunting(Boolean.parseBoolean(playersInfo[9]));
+    public static Player unPack(String str){
 
-        if(!playersInfo[10].equals("null")){
-            me.setEnemyRocket(new Rocket((int)Double.parseDouble(playersInfo[10]), 
-                    (int)Double.parseDouble(playersInfo[11]), 
-                    Integer.parseInt(playersInfo[12]), enemy.getTeam()));
-        }else{
-            me.setEnemyRocket(null);
+        String[] playerData = str.split(parseChar);
+        String[] data = playerData[0].split(SSMClient.parseChar);
+
+        Player player = new Player(Integer.parseInt(data[0]),Integer.parseInt(data[1]),Integer.parseInt(data[2]),
+                Integer.parseInt(data[3]),Integer.parseInt(data[4]));
+        player.setPercentage(Double.parseDouble(data[5]));
+        player.setCharacter(Integer.parseInt(data[6]));
+        player.setPlayerName(data[7]);
+        player.setLives(Integer.parseInt(data[8]));
+        player.setDirection(Integer.parseInt(data[9]));
+        player.setTaunting(Boolean.parseBoolean(data[10]));
+        player.setMyImageIndex(Integer.parseInt(data[11]));
+        player.setStunDuration(Double.parseDouble(data[12]));
+        player.setXVel(Double.parseDouble(data[13]));
+        player.setIsBoss(Boolean.parseBoolean(data[14]));
+        player.setConfusionDuration(Double.parseDouble(data[15]));
+        player.setLAttackTimer(Double.parseDouble(data[16]));
+        player.setFlameDuration(Double.parseDouble(data[17]));
+        player.setChargingLAttackStrength(Double.parseDouble(data[18]));
+        player.setStunner(Integer.parseInt(data[19]));
+        player.setStunDrawTimer(Double.parseDouble(data[20]));
+        player.setFlameDrawTimer(Double.parseDouble(data[21]));
+        player.setLCooldown(Double.parseDouble(data[22]));
+        player.setMySFX(player.unPackSFX(data[23]));
+        player.setNumStickies(Integer.parseInt(data[24]));
+        player.setStickyLocs(player.unPackStickyLocs(data[25]));
+
+        player.setPList(Projectile.unPackArray(playerData[1]));
+        player.setRocketList(Rocket.unPackArray(playerData[2]));
+        player.setMyPunch(Punch.unPack(playerData[3]));
+        player.setMyVPunch(VerticalPunch.unPack(playerData[4]));
+        player.setMyLightning(Lightning.unPack(playerData[5]));
+        player.setLAttacks(GrowingLAttack.unPackArray(playerData[6]));
+        player.setMyMoto(Motorcycle.unPack(playerData[7]));
+        player.setHealing(Boolean.parseBoolean(playerData[8]));
+        player.setMyStick(Stick.unPack(playerData[9]));
+        player.setMyRain(RainingCode.unPack(playerData[10]));
+        player.setBoomerangs(Boomerang.unPackArray(playerData[11]));
+        player.setExplosions(Explosion.unPackArray(playerData[12]));
+        player.setMimic(player.unPackMimic(playerData[13],player));
+
+        return player;
+    }
+
+    //Sound effect codes:
+    //"gun" = Matei, Salome, Jack projectiles
+    public String packSFX(){
+        String data = " ";
+        for(int i=0; i<mySFX.size(); i++)
+            data = data.concat(mySFX.get(i) + Projectile.arrayParseChar);
+        return data;
+    }
+    public ArrayList<String> unPackSFX(String s){
+        String[] data = s.split(Projectile.arrayParseChar);
+        return new ArrayList<>(Arrays.asList(data));
+    }
+    public static ArrayList<Clip> convertSFX(List<String> data){
+        ArrayList<Clip> sfx = new ArrayList<>();
+        for(String str : data){
+            str = str.trim();
+            switch(str){
+                case("gun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/pew.wav"));
+                case("rocket") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/rocketSFX.wav"));
+                case("stickyShot") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyShot.wav"));
+                case("stickyExplosion") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyExplosion.wav"));
+                case("fireball") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/fireballSFX.wav"));
+                case("electricity") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/electricity.wav"));
+                case("sun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
+                case("punch") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch"+(int)(Math.random()*3)+".wav"));
+                case("whistle") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/whistle.wav"));
+                case("tennis") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/tennisball.wav"));
+                case("net") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/net.wav"));
+            }
         }
-        
-        if(!playersInfo[13].equals("null")){
-            me.setEnemyVPunch(new VerticalPunch((int)enemy.getX(),(int)enemy.getY(),
-                    enemy.getDirection(), enemy.getTeam(),Double.parseDouble(playersInfo[13]),
-                    Boolean.parseBoolean(playersInfo[14])));
-        } else {
-            me.setEnemyVPunch(null);
+        return sfx;
+    }
+    public String packStickyLocs(){
+        String data = " ";
+        for(int i = stickyLocs.size()-1; i>=0; i--) {
+            Point p = stickyLocs.get(i);
+            data = data.concat(p.x + "#" + p.y + Projectile.arrayParseChar);
         }
-        
-        enemy.setMyImageIndex(Integer.parseInt(playersInfo[15]));
-        
-        if(!playersInfo[16].equals("null")){
-            me.setEnemyLightning(new Lightning((int)enemy.getX(), (int)enemy.getY(),
-                    enemy.getDirection(), enemy.getTeam(), Double.parseDouble(playersInfo[16]),
-                    Boolean.parseBoolean(playersInfo[17]), Double.parseDouble(playersInfo[18])));
+        return data;
+    }
+    public List<Point> unPackStickyLocs(String s){
+        String[] data = s.split(Projectile.arrayParseChar);
+        List<Point> locs = new ArrayList<>();
+        for(String str : data) {
+            if(!str.equals(" ")) {
+                String[] point = str.split("#");
+                locs.add(new Point(Integer.parseInt(point[0].trim()), Integer.parseInt(point[1].trim())));
+            }
         }
-        
-        if(!playersInfo[19].equals("null")){
-            me.setEnemyLAttack(new GrowingLAttack((int)Double.parseDouble(playersInfo[19]), 
-                    (int)Double.parseDouble(playersInfo[20]),Integer.parseInt(playersInfo[21]), 
-                    enemy.getTeam(), Integer.parseInt(playersInfo[22])));
-        } else
-            me.setEnemyLAttack(null);
-        
-        if(playersInfo[23].equals("false")){
-            me.setEnemyMoto(new Motorcycle((int)enemy.getX(),(int)enemy.getY(),enemy.getDirection(),
-                    enemy.getTeam(), Boolean.parseBoolean(playersInfo[23])));
-        } else
-            me.setEnemyMoto(null);
-        
-        enemy.setSize(Integer.parseInt(playersInfo[24]),Integer.parseInt(playersInfo[25]));
-        
-        if(!playersInfo[26].equals("null")){
-            me.setEnemyStick(new Stick((int)enemy.getX(),(int)enemy.getY(),enemy.getDirection(),
-                    enemy.getTeam(), false, Double.parseDouble(playersInfo[26])));
-        } else
-            me.setEnemyStick(null);
-        
-        enemy.setStunDuration(Double.parseDouble(playersInfo[27]));
-        me.setEnemyDashing(Boolean.parseBoolean(playersInfo[28]));
-        enemy.setXVel(Double.parseDouble(playersInfo[29]));
-        enemy.setIsBoss(Boolean.parseBoolean(playersInfo[30]));
-        
-        if(!playersInfo[31].equals("null")){
-            me.setEnemyRain(new RainingCode((int)Double.parseDouble(playersInfo[31])));
-        } else
-            me.setEnemyRain(null);
-        
-        enemy.setConfusionDuration(Double.parseDouble(playersInfo[32]));
-        
-        if(!playersInfo[33].equals("null")){
-            me.enemyPunch.setSize(Integer.parseInt(playersInfo[33]), Integer.parseInt(playersInfo[34]));
-            me.enemyPunch.setDirection(Integer.parseInt(playersInfo[35]));
-        }
-        else{
-            me.setEnemyPunch(null);
-        }
-        
-        enemy.setLAttackTimer(Double.parseDouble(playersInfo[36]));
-        
-        if(!playersInfo[37].equals("null")){
-            me.setEnemyBoomerang(new Boomerang(Integer.parseInt(playersInfo[37]), Integer.parseInt(playersInfo[38]),
-                Integer.parseInt(playersInfo[39]),Integer.parseInt(playersInfo[40]), Boolean.parseBoolean(playersInfo[41]),
-                enemy.getTeam(), Boolean.parseBoolean(playersInfo[42]), Double.parseDouble(playersInfo[43])));
-        } else {
-            me.setEnemyBoomerang(null);
-        }
-        
-        enemy.setFlameDuration(Double.parseDouble(playersInfo[44]));
-        
-    }    
+        return locs;
+    }
+    public String packMimic(){
+        String data = " ";
+        if(myMimic == null)
+            return "null";
+        data += myMimic.getX() + Projectile.arrayParseChar;
+        data += myMimic.getY() + Projectile.arrayParseChar;
+        data += myMimic.getW() + Projectile.arrayParseChar;
+        data += myMimic.getH() + Projectile.arrayParseChar;
+        return data;
+    }
+    public Player unPackMimic(String in, Player me){
+        String[] data = in.trim().split(Projectile.arrayParseChar);
+        if(in.equals("null"))
+            return null;
+        return new Player(Double.parseDouble(data[0]),Double.parseDouble(data[1]),
+                Integer.parseInt(data[2]),Integer.parseInt(data[3]), me.playerID);
+    }
 }
+
