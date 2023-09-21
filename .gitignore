@@ -1,0 +1,11 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# Error Logs
+*.log
+
+# Class compiled files
+*.class
+
+/bin
