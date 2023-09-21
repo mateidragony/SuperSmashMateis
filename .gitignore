@@ -7,3 +7,5 @@
 
 # Class compiled files
 *.class
+
+/bin

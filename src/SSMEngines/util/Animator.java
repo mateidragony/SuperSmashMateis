@@ -386,7 +386,7 @@ public class Animator {
             playAgain.set(playerID,true);
     }
 
-    /**
+     /**
      * In game methods
      */
     public void handlePlayerMovement(Player me, int index){
@@ -789,7 +789,7 @@ public class Animator {
         String cheatCode = cheatCodes.get(playerID).replaceAll(" ","");
 
         //increase your player number
-        if(cheatCode.contains("increase")) {
+        if(cheatCode.contains("ncrease")) {
             int character = players.get(playerID).getCharacter();
             if(character == Player.DUMMY - 1)
                 players.get(playerID).setCharacter(0);
@@ -798,7 +798,7 @@ public class Animator {
             cheatCodes.set(playerID,"");
         }
         //decrease your player number
-        if(cheatCode.contains("decrease")) {
+        if(cheatCode.contains("ecrease")) {
             int character = players.get(playerID).getCharacter();
             if(character == 0)
                 players.get(playerID).setCharacter(Player.DUMMY-1);
@@ -812,7 +812,7 @@ public class Animator {
             cheatCodes.set(playerID,"");
         }
         //Boss code and is Spock
-        String bossCode = "Zbogck";
+        String bossCode = "bogck";
         if(cheatCode.contains(bossCode) && players.get(playerID).getCharacter() == Player.SPOCK){
             if(!players.get(playerID).isBoss())
                 players.get(playerID).setIsBoss(true);
@@ -821,6 +821,10 @@ public class Animator {
                 players.get(playerID).setSize(60,90);
             }
             cheatCodes.set(playerID,"");
+        }
+
+        if(cheatCode.contains("fuck")){
+            players.get(2).setPercentage(300.0);
         }
 
     }

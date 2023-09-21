@@ -64,6 +64,7 @@ public class Player extends Actor{
     private static ArrayList<Image> miscImages;
     private static ArrayList<String> myNames;
     private static ArrayList<String> myTaunts;
+    private static ArrayList<Clip> sfxClips;
 
     private ArrayList<String> mySFX = new ArrayList<>();
 
@@ -467,17 +468,20 @@ public class Player extends Actor{
     }
 
     public void baseAnimate(){
-        setXVel(damageXVel+inputXVel + airInputXVel);
+        setXVel(damageXVel + inputXVel + airInputXVel);
 
         if(getY()+getH() >= getGround()) {
             damageXVel *= FRICTION;
             inputXVel *= FRICTION;
-            airInputXVel *= FRICTION;
+//            airInputXVel *= FRICTION;
         }
 
         super.animate();
     }
     public void animate(){
+
+        setPlayerName("D- "+damageXVel+"- I- "+inputXVel+"- A- "+airInputXVel);
+
         baseAnimate();
         //animate spock's boss mode
         if(isBoss)
@@ -1125,9 +1129,12 @@ public class Player extends Actor{
             inputXVel = 5 * dir;
 
         if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) < 5 && dir == Projectile.RIGHT)
-            airInputXVel += .1;
+            airInputXVel += 1;
         else if(!isOnGround() && (inputXVel+damageXVel+airInputXVel) > -5 && dir == Projectile.LEFT)
-            airInputXVel -= .1;
+            airInputXVel -= 1;
+
+        if(isOnGround())
+            airInputXVel = 0;
 
         if(myMimic != null){
             myMimic.move(-dir);
@@ -1145,6 +1152,24 @@ public class Player extends Actor{
             airInputXVel -= .1;
     }
 
+
+    public static void initMusic(){
+        sfxClips = new ArrayList<>();
+
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/pew.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/rocketSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyShot.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyExplosion.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/fireballSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/electricity.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch0.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch1.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch2.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/whistle.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/tennisball.wav"));
+        sfxClips.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/net.wav"));
+    }
 
     /**
      * Packing and Unpacking Players
@@ -1272,17 +1297,17 @@ public class Player extends Actor{
         for(String str : data){
             str = str.trim();
             switch(str){
-                case("gun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/pew.wav"));
-                case("rocket") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/MateiAttacks/rocketSFX.wav"));
-                case("stickyShot") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyShot.wav"));
-                case("stickyExplosion") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/BryceAttacks/stickyExplosion.wav"));
-                case("fireball") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/fireballSFX.wav"));
-                case("electricity") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/electricity.wav"));
-                case("sun") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/AdamAttacks/sunSFX.wav"));
-                case("punch") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/UmerAttacks/punch"+(int)(Math.random()*3)+".wav"));
-                case("whistle") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/whistle.wav"));
-                case("tennis") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/tennisball.wav"));
-                case("net") -> sfx.add(AudioUtility.loadClip("SSMMusic/SFX/RishiAttacks/net.wav"));
+                case("gun") -> sfx.add(sfxClips.get(0));
+                case("rocket") -> sfx.add(sfxClips.get(1));
+                case("stickyShot") -> sfx.add(sfxClips.get(2));
+                case("stickyExplosion") -> sfx.add(sfxClips.get(3));
+                case("fireball") -> sfx.add(sfxClips.get(4));
+                case("electricity") -> sfx.add(sfxClips.get(5));
+                case("sun") -> sfx.add(sfxClips.get(6));
+                case("punch") -> sfx.add(sfxClips.get(7 + (int)(Math.random()*3)));
+                case("whistle") -> sfx.add(sfxClips.get(10));
+                case("tennis") -> sfx.add(sfxClips.get(11));
+                case("net") -> sfx.add(sfxClips.get(12));
             }
         }
         return sfx;
