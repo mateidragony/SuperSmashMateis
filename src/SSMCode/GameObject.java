@@ -5,13 +5,10 @@
  */
 package SSMCode;
 
-/**
- *
- * @author 22cloteauxm
- */
+
+import SSMEngines.AnimationPanel;
 
 import java.awt.*;
-import java.awt.image.ImageObserver;
 
 public class GameObject {
     
@@ -44,12 +41,16 @@ public class GameObject {
         return (this.getHitBox().intersects(go.getHitBox()));
     }
     
-    public void draw(Graphics g, ImageObserver io){
+    public void draw(Graphics g){
         g.setColor(Color.BLUE);
         g.fillRect((int)x,(int)y, width, height);
     }
     
     public void animate(){
         
+    }
+
+    public boolean outOfBounds(){
+        return x<-200 || x> AnimationPanel.width+200;
     }
 }

@@ -33,9 +33,11 @@ public abstract class AnimationPanel extends JPanel implements KeyListener, Mous
     public int mouseX;
     public int mouseY;
     public String myName;
+
+    public static final int width = 1100, height = 650;
     
     
-    public AnimationPanel(String n, int width, int height)
+    public AnimationPanel(String n)
     {
         frameNumber = 0;
         mouseX = 0;
@@ -120,6 +122,7 @@ public abstract class AnimationPanel extends JPanel implements KeyListener, Mous
         frameNumber++;
         this.requestFocusInWindow();
         renderFrame(g);
+      //  repaint();
     }
     
     //A utility to load audio clips!

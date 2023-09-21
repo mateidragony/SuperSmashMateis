@@ -12,7 +12,7 @@ package SSMCode;
 public class Actor extends GameObject{
     
     public static double GRAVITY = 0.5;    
-    private final double FRICTION = 0.75;
+    public final double FRICTION = 0.75;
     private final double maxVel = 5.5;
     
     private double xVel;
@@ -37,7 +37,7 @@ public class Actor extends GameObject{
     public double getYVel(){return yVel;}
     public double getPercentage(){return percentage;}
     public boolean isUntargetable(){return untargetable;}
-    
+    public int getGround(){return ground;}
     public boolean isOnGround(){return yVel==0 && getY()+getH() == ground;}
     
     //modifiers
@@ -51,7 +51,7 @@ public class Actor extends GameObject{
     
     //methods
     public void basicPhysicsMotion(){        
-        if(getY()+getH() >= ground) {
+        if(getY()+getH() > ground) {
             setY(ground-getH());
             yVel = 0;
             setXVel(getXVel()*FRICTION);

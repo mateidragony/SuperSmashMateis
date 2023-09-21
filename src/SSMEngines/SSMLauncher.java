@@ -1,203 +1,151 @@
 package SSMEngines;
 
+import SSMEngines.util.Poolkit;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.Ellipse2D;
-import java.util.ArrayList;
 
-public class SSMLauncher extends JPanel implements MouseListener, MouseMotionListener {
-
-    private int mouseX;
-    private int mouseY;
+public class SSMLauncher extends JPanel {
 
     private int playerMode;
 
     private JFrame helpFrame;
     private JFrame newsFrame;
-    private JFrame inputFrame;
-    private JTextField nameInput;
 
-    private JTextField ipInput;
+    private HintTextField nameInput;
+    private HintTextField ipInput;
+    private JComboBox<String> playerModeSelector;
+    private JCheckBox hostServer;
+    private JButton helpButt;
+    private JButton patchNotesButt;
+    private JButton startButt;
+    private JProgressBar loading;
 
+    private int progress;
     private String patchNotes;
     private String helpNotes;
     private String ipAddress = " . . ";
     private String playerName = "Player Dwo";
 
-    private boolean shouldLaunch;
+    private boolean pressedStart;
 
-    public SSMLauncher(){
+    private final Image bg;
+    private final Image bg2;
 
-        mouseX = 0;
-        mouseY = 0;
+    public SSMLauncher() {
 
-        this.setPreferredSize(new Dimension(700,500));
-        this.addMouseListener(this);
-        this.addMouseMotionListener(this);
+        this.setPreferredSize(new Dimension(800, 600));
+
+        Poolkit toolkit = new Poolkit();
+        bg = toolkit.getImage("SSMImages/launcherScreen.png");
+        bg2 = toolkit.getImage("SSMImages/launcherScreenFG.png");
 
         initStrings();
         initHelpFrame();
         initNewsFrame();
         initInputFrame();
+
+        setComponentLocations();
     }
 
 
-    public void paintComponent(Graphics g){
+    public void paintComponent(Graphics g) {
 
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-
-        Image bg = toolkit.getImage("SSMImages/launcherScreen.png");
-        Image fg = toolkit.getImage("SSMImages/launcherScreenFG.png");
-        Image bigManButt = toolkit.getImage("SSMImages/launchButton.png");
-        g.drawImage(bg,-2,0,702,500,this);
-        drawMouseMovements(g);
-        g.drawImage(fg,-2,0,702,500,this);
-
-        g.setColor(Color.red);
-        g.drawString("X: "+mouseX+", Y: "+mouseY + " PlayerMode: "+playerMode
-                + "     "+ipAddress + "  len: ",10,10);
+        //Image bigManButt = toolkit.getImage("SSMImages/launchButton.png");
+        g.drawImage(bg, 0, 0, this);
+        g.drawImage(bg2,249,118,this);
 
         g.setColor(Color.black);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 25));
 
+        playerMode = playerModeSelector.getSelectedIndex();
 
-        if(playerMode > 1) {
-            ipInput.setVisible(true);
-        } else {
-            ipInput.setVisible(false);
+
+        if(playerMode == 1) {
+            hostServer.setSelected(true);
+            hostServer.setEnabled(false);
+        } else
+            hostServer.setEnabled(true);
+
+        if(playerMode == 1 || hostServer.isSelected()){
+            ipInput.setText("localhost");
+            ipInput.setForeground(Color.BLACK);
+            ipInput.setFont(new Font("Tahoma", Font.PLAIN, 15));
+            ipInput.setEnabled(false);
+        } else{
+            if(ipInput.getText().equals("localhost"))
+                ipInput.resetHint();
+            ipInput.setEnabled(true);
         }
-        inputFrame.repaint();
 
         ipAddress = ipInput.getText();
         playerName = nameInput.getText();
+        startButt.setVisible(readyToLaunch());
+        loading.setValue(progress);
 
-        if(readyToLaunch())
-            g.drawImage(bigManButt,350-99,385,198,68,this);
+        if(pressedStart){
+            loading.setVisible(true);
 
-    }
+            ipInput.setEnabled(false);
+            nameInput.setEnabled(false);
+            hostServer.setEnabled(false);
+            playerModeSelector.setEnabled(false);
 
-
-    public boolean shouldLaunch(){return shouldLaunch;}
-    public int getPlayerMode(){return playerMode;}
-    public String getIP(){return ipAddress;}
-    public String getPlayerName(){return playerName;}
-
-
-    public void handleMouseClicks(){
-
-        ArrayList<Rectangle> rects = new ArrayList<>();
-
-        rects.add(new Rectangle(57,221,103,103));
-        rects.add(new Rectangle(217,221,103,103));
-        rects.add(new Rectangle(379,221,103,103));
-        rects.add(new Rectangle(539,221,103,103));
-
-        Ellipse2D help = new Ellipse2D.Float(36,118,64,64);
-        Ellipse2D news = new Ellipse2D.Float(603,118,64,64);
-
-        for(int i=0; i<rects.size(); i++){
-            if(rects.get(i).contains(mouseX,mouseY))
-                playerMode = i+1;
+            int addition = (int)(Math.random()*60)-30;
+            addition = Math.max(addition, 0);
+            progress+=addition;
         }
 
-        if(help.contains(mouseX,mouseY)) {
-            helpFrame.setVisible(true);
-            helpFrame.toFront();
-            helpFrame.requestFocus();
-        }
-        if(news.contains(mouseX,mouseY)) {
-            newsFrame.setVisible(true);
-            newsFrame.toFront();
-            newsFrame.requestFocus();
-        }
-
-        if(new Rectangle(350-99,385,198,68).contains(mouseX,mouseY) && readyToLaunch())
-            shouldLaunch = true;
-    }
-    public void drawMouseMovements(Graphics graph){
-
-        Graphics2D g = (Graphics2D)graph;
-
-        ArrayList<Rectangle> rects = new ArrayList<>();
-
-        rects.add(new Rectangle(53,218,111,109));
-        rects.add(new Rectangle(213,218,110,109));
-        rects.add(new Rectangle(375,218,111,109));
-        rects.add(new Rectangle(535,218,111,109));
-
-        Ellipse2D help = new Ellipse2D.Float(31,114,73,73);
-        Ellipse2D news = new Ellipse2D.Float(595,115,72,72);
-
-
-        g.setColor(Color.red);
-        if(playerMode > 0)
-            g.fill(rects.get(playerMode-1));
-
-
-        g.setColor(Color.black);
-        for(int i=0; i<rects.size(); i++){
-            Rectangle r = rects.get(i);
-
-            if(r.contains(mouseX,mouseY))
-                g.fill(r);
-        }
-
-        if(help.contains(mouseX,mouseY))
-            g.fill(help);
-        if(news.contains(mouseX,mouseY))
-            g.fill(news);
-
+        setComponentLocations();
     }
 
-    public void mouseClicked(MouseEvent e) {
-        handleMouseClicks();
 
-        inputFrame.requestFocus();
-    }
-    public void mousePressed(MouseEvent e){}
-    public void mouseReleased(MouseEvent e) {}
-    public void mouseEntered(MouseEvent e) {}
-    public void mouseExited(MouseEvent e) {}
-    public void mouseDragged(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
-    }
-    public void mouseMoved(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
-    }
+    //public boolean shouldLaunch() {return loading.getPercentComplete() == 1;}
+    public boolean shouldLaunch() {return pressedStart;}
+    public int getPlayerMode() {return playerMode;}
+    public String getIP() {return ipAddress;}
+    public String getPlayerName() {return playerName;}
+    public boolean hostServer(){return hostServer.isSelected();}
 
-    public void setFrameLocations(JFrame myFrame){
-        inputFrame.setLocation(myFrame.getX()+260,myFrame.getY()+200);
+    public void setComponentLocations() {
+        nameInput.setLocation(25, 190);
+        ipInput.setLocation(25, 250);
+        hostServer.setLocation(25,310);
+        playerModeSelector.setLocation(25, 370);
+        startButt.setLocation(25,430);
+        loading.setLocation(25,515);
+
+        patchNotesButt.setLocation(350,23);
+        helpButt.setLocation(570,23);
     }
 
-    public void initHelpFrame(){
+    public void initHelpFrame() {
         helpFrame = new JFrame("Help");
-        helpFrame.setSize(new Dimension(400,500));
+        helpFrame.setSize(new Dimension(400, 500));
         helpFrame.setVisible(false);
         helpFrame.setResizable(false);
-        helpFrame.setLocation(0,50);
+        helpFrame.setLocation(0, 50);
 
-        JTextArea titleTextArea = new JTextArea(1,12);
+        JTextArea titleTextArea = new JTextArea(1, 12);
         titleTextArea.setEditable(false);
-        titleTextArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        titleTextArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane titleScrollPane = new JScrollPane(titleTextArea);
 
-        JTextArea textArea = new JTextArea(22,10);
+        JTextArea textArea = new JTextArea(22, 10);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
-        textArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        textArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane scrollPane = new JScrollPane(textArea);
 
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         panel.add(titleScrollPane);
-        panel.add(Box.createRigidArea(new Dimension(0,5)));
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(scrollPane);
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         textArea.setFont(new Font(Font.SERIF, Font.BOLD, 15));
         titleTextArea.setFont(new Font(Font.SERIF, Font.BOLD, 30));
@@ -207,32 +155,32 @@ public class SSMLauncher extends JPanel implements MouseListener, MouseMotionLis
         helpFrame.getContentPane().add(panel);
         helpFrame.pack();
     }
-    public void initNewsFrame(){
+    public void initNewsFrame() {
         newsFrame = new JFrame("Patch Notes");
-        newsFrame.setSize(new Dimension(400,500));
+        newsFrame.setSize(new Dimension(400, 500));
         newsFrame.setVisible(false);
         newsFrame.setResizable(false);
-        newsFrame.setLocation(1000,50);
+        newsFrame.setLocation(1000, 50);
 
-        JTextArea titleTextArea = new JTextArea(1,12);
+        JTextArea titleTextArea = new JTextArea(1, 12);
         titleTextArea.setEditable(false);
-        titleTextArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        titleTextArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane titleScrollPane = new JScrollPane(titleTextArea);
 
-        JTextArea textArea = new JTextArea(22,10);
+        JTextArea textArea = new JTextArea(22, 10);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
-        textArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        textArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane scrollPane = new JScrollPane(textArea);
 
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         panel.add(titleScrollPane);
-        panel.add(Box.createRigidArea(new Dimension(0,5)));
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(scrollPane);
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         textArea.setFont(new Font(Font.SERIF, Font.BOLD, 15));
         titleTextArea.setFont(new Font(Font.SERIF, Font.BOLD, 30));
@@ -242,7 +190,7 @@ public class SSMLauncher extends JPanel implements MouseListener, MouseMotionLis
         newsFrame.getContentPane().add(panel);
         newsFrame.pack();
     }
-    public void initStrings(){
+    public void initStrings() {
         patchNotes = """
                 Patch 2.1.1
                 Added a game launcher which allows players to choose between 1,2,3, and 4 player mode easily. Laucher also includes patch notes and help box.
@@ -353,73 +301,151 @@ public class SSMLauncher extends JPanel implements MouseListener, MouseMotionLis
                 powerful vortex\s""";
 
     }
-    public void initInputFrame(){
-        inputFrame = new JFrame();
-        inputFrame.setResizable(false);
-        inputFrame.setVisible(false);
-        inputFrame.setUndecorated(true);
-        inputFrame.setLocation(360,360);
-        inputFrame.setSize(new Dimension(200,200));
+    public void initInputFrame() {
+        String nameHint = "Enter Player Name";
+        nameInput = new HintTextField(nameHint);
+        nameInput.setPreferredSize(new Dimension(200, 40));
+        nameInput.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        String ipHint = "Enter IP Address";
+        ipInput = new HintTextField(ipHint);
+        ipInput.setPreferredSize(new Dimension(200, 40));
+        ipInput.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        nameInput = new JTextField();
-        nameInput.setSize(new Dimension(150,30));
-        nameInput.setBorder(BorderFactory.createEmptyBorder(5,10,5,10));
-        nameInput.setFont(new Font(Font.SERIF, Font.PLAIN, 20));
+        playerModeSelector = new JComboBox<>(new String[]{"Player Mode", "Single Player", "2 Players", "3 players", "4 players"});
+        playerModeSelector.setPreferredSize(new Dimension(200, 40));
+        playerModeSelector.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        playerModeSelector.setFont(new Font("Tahoma", Font.PLAIN, 15));
 
-        ipInput = new JTextField("IP");
-        ipInput.setSize(new Dimension(150,30));
-        ipInput.setBorder(BorderFactory.createEmptyBorder(5,10,5,10));
-        ipInput.setFont(new Font(Font.SERIF, Font.PLAIN, 20));
+        hostServer = new JCheckBox("Host the Game Server");
+        hostServer.setPreferredSize(new Dimension(200, 40));
+        hostServer.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        hostServer.setFont(new Font("Tahoma", Font.PLAIN, 15));
 
-        panel.add(nameInput);
-        panel.add(Box.createRigidArea(new Dimension(0,130)));
-        panel.add(ipInput);
-
-        inputFrame.add(panel);
-
-        panel.setBackground(new Color(0,0,0,0));
-        inputFrame.setBackground(new Color(0,0,0,0));
-    }
-
-    public boolean readyToLaunch(){
-        return playerMode == 1 || (ipAddress.split("\\.").length == 4) || ipAddress.equals("localhost");
-    }
-    public void idkWhyIHaveToDoThisButThisIsKindaDum(){
-        inputFrame.setVisible(true);
-        inputFrame.toFront();
-        inputFrame.requestFocus();
-    }
-
-    public void noVisible(){inputFrame.setVisible(false);}
-
-    public static void main(String[] args){
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch(Exception ex){ ex.printStackTrace(); }
-
-        SSMLauncher launcher = new SSMLauncher();
-
-        JFrame myFrame = new JFrame("SSM Launcher");
-        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        myFrame.setVisible(true);
-        myFrame.add(launcher);
-        myFrame.setResizable(false);
-        myFrame.setSize(launcher.getPreferredSize());
-        myFrame.setLocation(300,50);
-
-        launcher.idkWhyIHaveToDoThisButThisIsKindaDum();
-
-
-        Timer t = new Timer(30/1000, timerRepaint -> {
-            myFrame.getComponent(0).repaint();
-            launcher.setFrameLocations(myFrame);
+        patchNotesButt = new JButton("Patch Notes");
+        patchNotesButt.setPreferredSize(new Dimension(180,60));
+        patchNotesButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        patchNotesButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        patchNotesButt.addActionListener(e -> {
+            newsFrame.setVisible(true);
+            newsFrame.toFront();
+            newsFrame.requestFocus();
         });
 
-        t.start();
+        helpButt = new JButton("How to Play");
+        helpButt.setPreferredSize(new Dimension(180,60));
+        helpButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        helpButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        helpButt.addActionListener(e -> {
+            helpFrame.setVisible(true);
+            helpFrame.toFront();
+            helpFrame.requestFocus();
+        });
+
+        startButt = new JButton(new ImageIcon("SSMImages/launchButton.png"));
+        startButt.setPreferredSize(new Dimension(200,74));
+        startButt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        startButt.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        startButt.setVisible(false);
+        startButt.addActionListener(e -> pressedStart=true);
+        startButt.setOpaque(false);
+        startButt.setBorderPainted(false);
+
+        loading = new JProgressBar();
+        loading.setPreferredSize(new Dimension(200,25));
+        loading.setMaximum(1000);
+        loading.setVisible(false);
+
+        this.add(playerModeSelector);
+        this.add(nameInput);
+        this.add(ipInput);
+        this.add(hostServer);
+        this.add(patchNotesButt);
+        this.add(helpButt);
+        this.add(startButt);
+        this.add(loading);
+
+        startButt.requestFocus();
     }
 
+    public boolean readyToLaunch() {
+        return (playerMode == 1 || (ipAddress.split("\\.").length == 4) || ipAddress.equals("localhost"))
+                && playerMode != 0;
+    }
+
+//    public static void main(String[] args) {
+//
+//        try {
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+//
+//        SSMLauncher launcher = new SSMLauncher();
+//
+//        JFrame myFrame = new JFrame("SSM Launcher");
+//        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        myFrame.setVisible(true);
+//        myFrame.add(launcher);
+//        myFrame.setResizable(false);
+//        myFrame.setSize(launcher.getPreferredSize());
+//        myFrame.setLocation(300, 50);
+//
+//        Timer t = new Timer(1000/60, timerRepaint -> myFrame.getComponent(0).repaint());
+//
+//        t.start();
+//    }
+
+
+    private static class HintTextField extends JTextField {
+
+        Font gainFont = new Font("Tahoma", Font.PLAIN, 15);
+        Font lostFont = new Font("Tahoma", Font.ITALIC, 15);
+
+        String hintText;
+
+        public void resetHint(){
+            setText(hintText);
+            setFont(lostFont);
+            setForeground(Color.GRAY);
+        }
+
+
+        public HintTextField(final String hint) {
+
+            hintText = hint;
+
+            setText(hint);
+            setFont(lostFont);
+            setForeground(Color.GRAY);
+
+            this.addFocusListener(new FocusAdapter() {
+
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (getText().equals(hint)) {
+                        setForeground(Color.BLACK);
+                        setText("");
+                        setFont(gainFont);
+                    } else {
+                        setText(getText());
+                        setFont(gainFont);
+                    }
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (getText().equals(hint) || getText().length() == 0) {
+                        setText(hint);
+                        setFont(lostFont);
+                        setForeground(Color.GRAY);
+                    } else {
+                        setText(getText());
+                        setFont(gainFont);
+                        setForeground(Color.BLACK);
+                    }
+                }
+            });
+        }
+    }
 }
