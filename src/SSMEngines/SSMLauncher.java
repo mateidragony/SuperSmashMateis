@@ -1,5 +1,7 @@
 package SSMEngines;
 
+import SSMEngines.util.Poolkit;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -35,7 +37,7 @@ public class SSMLauncher extends JPanel {
 
         this.setPreferredSize(new Dimension(800, 600));
 
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        Poolkit toolkit = new Poolkit();
         bg = toolkit.getImage("SSMImages/launcherScreen.png");
         bg2 = toolkit.getImage("SSMImages/launcherScreenFG.png");
 

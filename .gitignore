@@ -6,4 +6,6 @@
 *.log
 
 # Class compiled files
-*.Class
+*.class
+
+/bin

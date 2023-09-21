@@ -111,7 +111,7 @@ public class SSMClient extends AnimationPanel{
 
             InputStream inStream = socket.getInputStream();
             OutputStream outStream = socket.getOutputStream();
-            
+
             ObjectOutputStream out = new ObjectOutputStream(outStream);
             ObjectInputStream in = new ObjectInputStream(inStream);
 
@@ -361,5 +361,8 @@ public class SSMClient extends AnimationPanel{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    public void initMusic(){
+        Player.initMusic();
     }
 }
